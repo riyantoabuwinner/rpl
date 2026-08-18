@@ -19,10 +19,11 @@ class AuthenticatedSessionController extends Controller
     /**
      * Display the login view.
      */
-    public function create(): Response
+    public function create(Request $request): Response
     {
         return Inertia::render('Auth/Login', [
             'status' => session('status'),
+            'initialTab' => $request->query('tab', 'login'),
         ]);
     }
 
