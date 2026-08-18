@@ -19,6 +19,7 @@ class RplKlaimCpmk extends Model
         'mata_kuliah_id',
         'cpmk_id',
         'indikator_cpmk_id',
+        'jenis_pengajuan',
         'deskripsi_pengalaman_relevan',
         'tingkat_kemampuan_diri',
     ];

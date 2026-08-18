@@ -138,11 +138,23 @@ class PendaftarController extends Controller
             'nik' => 'required|string|digits:16',
             'telepon' => 'required|string|max:20',
             'jenis_kelamin' => 'required|in:L,P',
+            'status_pernikahan' => 'nullable|string|max:30',
+            'kebangsaan' => 'nullable|string|max:50',
             'tempat_lahir' => 'required|string|max:100',
             'tanggal_lahir' => 'required|date',
             'alamat_lengkap' => 'required|string',
+            'rt_rw' => 'nullable|string|max:50',
+            'kecamatan' => 'nullable|string|max:100',
+            'kabupaten_kota' => 'nullable|string|max:100',
+            'kode_pos' => 'nullable|string|max:10',
+            'telepon_rumah' => 'nullable|string|max:30',
+            'telepon_kantor' => 'nullable|string|max:30',
             'pekerjaan_saat_ini' => 'nullable|string|max:150',
             'instansi_pekerjaan' => 'nullable|string|max:150',
+            'lampiran_evaluasi_diri' => 'nullable|boolean',
+            'lampiran_drh' => 'nullable|boolean',
+            'lampiran_ijazah_transkrip' => 'nullable|boolean',
+            'lampiran_lainnya' => 'nullable|string|max:255',
         ]);
 
         $pendaftar = RplPendaftar::where('user_id', $user->id)->first();
@@ -330,6 +342,7 @@ class PendaftarController extends Controller
             'mata_kuliah_id' => 'required|uuid|exists:mata_kuliah,id',
             'cpmk_id' => 'nullable|uuid|exists:cpmk,id',
             'indikator_cpmk_id' => 'nullable|uuid|exists:indikator_cpmk,id',
+            'jenis_pengajuan' => 'nullable|in:transfer_sks,perolehan_sks',
             'deskripsi_pengalaman_relevan' => 'required|string',
             'tingkat_kemampuan_diri' => 'required|in:Sangat Baik,Baik,Cukup',
             'bukti_ids' => 'required|array|min:1',
@@ -344,6 +357,7 @@ class PendaftarController extends Controller
             'mata_kuliah_id' => $validated['mata_kuliah_id'],
             'cpmk_id' => $validated['cpmk_id'] ?? null,
             'indikator_cpmk_id' => $validated['indikator_cpmk_id'] ?? null,
+            'jenis_pengajuan' => $validated['jenis_pengajuan'] ?? 'perolehan_sks',
             'deskripsi_pengalaman_relevan' => $validated['deskripsi_pengalaman_relevan'],
             'tingkat_kemampuan_diri' => $validated['tingkat_kemampuan_diri'],
         ]);
@@ -454,5 +468,39 @@ class PendaftarController extends Controller
             DB::rollBack();
             return back()->with('error', 'Gagal memverifikasi pendaftaran: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Render official Form 2/F02 printable document matching UIN SSC specification
+     */
+    public function printFormF02(Request $request, ?string $id = null): Response
+    {
+        $user = $request->user();
+
+        if ($id) {
+            $pendaftar = RplPendaftar::with([
+                'gelombang',
+                'prodi.kurikulum.mataKuliah',
+                'pendidikan',
+                'pengalaman',
+                'bukti',
+                'klaim.mataKuliah',
+                'klaim.bukti',
+            ])->findOrFail($id);
+        } else {
+            $pendaftar = RplPendaftar::with([
+                'gelombang',
+                'prodi.kurikulum.mataKuliah',
+                'pendidikan',
+                'pengalaman',
+                'bukti',
+                'klaim.mataKuliah',
+                'klaim.bukti',
+            ])->where('user_id', $user->id)->firstOrFail();
+        }
+
+        return Inertia::render('FormF02/PrintF02', [
+            'pendaftar' => $pendaftar,
+        ]);
     }
 }

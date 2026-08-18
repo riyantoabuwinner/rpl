@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/klaim', [PendaftarController::class, 'saveKlaim'])->name('klaim');
         Route::delete('/klaim/{id}', [PendaftarController::class, 'deleteKlaim'])->name('klaim.delete');
         Route::post('/submit', [PendaftarController::class, 'submitForm'])->name('submit');
+        Route::get('/print/{id?}', [PendaftarController::class, 'printFormF02'])->name('print');
     });
 
     // Pendaftar Management & Administration (Admin Pusat RPL, Super Admin)

@@ -14,6 +14,7 @@ import {
     FileText,
     ArrowRight,
     ArrowLeft,
+    Printer,
 } from 'lucide-react';
 import { AppLayout } from '@/Components/Layout/AppLayout';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/Components/UI/Card';
@@ -39,7 +40,7 @@ export default function FormF02Wizard({
     const [isPendidikanModalOpen, setIsPendidikanModalOpen] = useState(false);
     const [isPengalamanModalOpen, setIsPengalamanModalOpen] = useState(false);
 
-    // Profile Form
+    // Profile Form with full Form 2/F02 fields
     const profileForm = useForm({
         gelombang_id: pendaftar?.gelombang_id || activeGelombang?.id || '',
         prodi_id: pendaftar?.prodi_id || (prodiList[0]?.id ?? ''),
@@ -47,10 +48,18 @@ export default function FormF02Wizard({
         nama_lengkap: pendaftar?.nama_lengkap || '',
         nik: pendaftar?.nik || '',
         telepon: pendaftar?.telepon || '',
+        telepon_rumah: pendaftar?.telepon_rumah || '',
+        telepon_kantor: pendaftar?.telepon_kantor || '',
         jenis_kelamin: pendaftar?.jenis_kelamin || 'L',
+        status_pernikahan: pendaftar?.status_pernikahan || 'Menikah',
+        kebangsaan: pendaftar?.kebangsaan || 'INDONESIA',
         tempat_lahir: pendaftar?.tempat_lahir || '',
         tanggal_lahir: pendaftar?.tanggal_lahir ? pendaftar.tanggal_lahir.substring(0, 10) : '',
         alamat_lengkap: pendaftar?.alamat_lengkap || '',
+        rt_rw: pendaftar?.rt_rw || '',
+        kecamatan: pendaftar?.kecamatan || '',
+        kabupaten_kota: pendaftar?.kabupaten_kota || '',
+        kode_pos: pendaftar?.kode_pos || '',
         pekerjaan_saat_ini: pendaftar?.pekerjaan_saat_ini || '',
         instansi_pekerjaan: pendaftar?.instansi_pekerjaan || '',
     });
@@ -59,16 +68,17 @@ export default function FormF02Wizard({
     const uploadForm = useForm({
         file: null as File | null,
         nama_dokumen: '',
-        jenis_bukti: 'sertifikat_pelatihan',
+        jenis_bukti: 'sertifikat_kompetensi',
         tahun_penerbitan: String(new Date().getFullYear()),
         penerbit_institusi: '',
         deskripsi_dokumen: '',
     });
 
-    // Klaim Form
+    // Klaim Form with Transfer sks vs Perolehan sks selection
     const klaimForm = useForm({
         mata_kuliah_id: '',
         cpmk_id: '',
+        jenis_pengajuan: 'perolehan_sks',
         deskripsi_pengalaman_relevan: '',
         tingkat_kemampuan_diri: 'Sangat Baik',
         bukti_ids: [] as string[],
@@ -149,7 +159,7 @@ export default function FormF02Wizard({
     };
 
     const handleSubmitFinal = () => {
-        if (confirm('Apakah Anda yakin ingin mengirimkan Formulir Evaluasi Diri (Form F-02)? Berkas akan dikunci untuk proses verifikasi.')) {
+        if (confirm('Apakah Anda yakin ingin mengirimkan Formulir Aplikasi Form 2/F02? Berkas akan dikunci untuk proses verifikasi administrasi.')) {
             router.post('/form-f02/submit');
         }
     };
@@ -168,25 +178,37 @@ export default function FormF02Wizard({
     ];
 
     return (
-        <AppLayout title="Formulir Evaluasi Diri (Form F-02)">
+        <AppLayout title="Formulir Aplikasi RPL Tipe A (Form 2/F02)">
             <div className="max-w-5xl mx-auto space-y-6">
-                {/* Header Info */}
-                <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-xl flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <Badge variant="blue" size="sm" className="bg-blue-600 text-white border-0 mb-1">
-                            Buku Panduan RPL &bull; Form F-02
-                        </Badge>
-                        <h3 className="text-xl font-bold text-white">Evaluasi Diri Capaian Pembelajaran Calon Mahasiswa</h3>
-                        <p className="text-xs text-blue-200 mt-0.5">
-                            Isi formulir portofolio dan petakan pengalaman Anda terhadap Capaian Pembelajaran Mata Kuliah (CPMK).
+                {/* Header Info Banner */}
+                <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-950 via-[#0a2723] to-slate-900 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-emerald-800/40">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <Badge variant="emerald" size="sm" className="bg-emerald-600 text-white border-0">
+                                Form 2 / F02 Resmi UIN SSC
+                            </Badge>
+                            <span className="text-xs text-emerald-300 font-mono">Tadris Matematika / BKI / S1</span>
+                        </div>
+                        <h3 className="text-xl font-black text-white">Formulir Aplikasi Rekognisi Pembelajaran Lampau</h3>
+                        <p className="text-xs text-emerald-200/80">
+                            Isi formulir aplikasi data diri, riwayat pendidikan, dan daftar mata kuliah yang diajukan untuk Transfer SKS atau Perolehan SKS.
                         </p>
                     </div>
 
-                    {isSubmitted && (
-                        <Badge variant="emerald" size="md" className="bg-emerald-500/20 text-emerald-300 border-emerald-400 text-sm px-4 py-2">
-                            <CheckCircle2 className="w-4 h-4 mr-1.5" /> Berkas Terkirim ({pendaftar.status_pendaftaran})
-                        </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {pendaftar && (
+                            <Link href="/form-f02/print" target="_blank">
+                                <Button variant="outline" size="sm" className="bg-white/10 text-white border-emerald-400/40 hover:bg-white/20">
+                                    <Printer className="w-4 h-4 mr-1.5" /> Cetak Dokumen F-02
+                                </Button>
+                            </Link>
+                        )}
+                        {isSubmitted && (
+                            <Badge variant="emerald" size="md" className="bg-emerald-500/20 text-emerald-300 border-emerald-400 text-sm px-3.5 py-1.5">
+                                <CheckCircle2 className="w-4 h-4 mr-1.5" /> Berkas Terkirim
+                            </Badge>
+                        )}
+                    </div>
                 </div>
 
                 {/* Step Indicators */}
@@ -203,7 +225,7 @@ export default function FormF02Wizard({
                                 onClick={() => setCurrentStep(s.num)}
                                 className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-1.5 ${
                                     isCurrent
-                                        ? 'bg-blue-600 text-white border-blue-500 shadow-md ring-2 ring-blue-500/30'
+                                        ? 'bg-[#125c50] text-white border-emerald-500 shadow-md ring-2 ring-emerald-500/30'
                                         : isPassed
                                         ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
                                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
@@ -216,11 +238,11 @@ export default function FormF02Wizard({
                     })}
                 </div>
 
-                {/* Step 1: Profil & Jalur */}
+                {/* Step 1: Profil & Jalur Form 2/F02 */}
                 {currentStep === 1 && (
                     <Card>
                         <CardHeader>
-                            <CardTitle>Langkah 1: Identitas Pribadi & Pilihan Jalur RPL</CardTitle>
+                            <CardTitle>Bagian 1.a: Data Pribadi Calon Mahasiswa</CardTitle>
                         </CardHeader>
                         <form onSubmit={handleSaveProfile}>
                             <CardContent className="space-y-4">
@@ -231,7 +253,7 @@ export default function FormF02Wizard({
                                             disabled={isSubmitted}
                                             value={profileForm.data.prodi_id}
                                             onChange={(e) => profileForm.setData('prodi_id', e.target.value)}
-                                            className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                                            className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 font-medium"
                                         >
                                             {prodiList.map((p) => (
                                                 <option key={p.id} value={p.id}>{p.nama_prodi} ({p.jenjang})</option>
@@ -245,10 +267,10 @@ export default function FormF02Wizard({
                                             disabled={isSubmitted}
                                             value={profileForm.data.jenis_rpl}
                                             onChange={(e) => profileForm.setData('jenis_rpl', e.target.value)}
-                                            className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 font-semibold text-blue-700"
+                                            className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 font-bold text-emerald-800"
                                         >
-                                            <option value="A2">RPL Tipe A2 (Perolehan Kredit - Pengalaman Kerja & Pelatihan)</option>
-                                            <option value="A1">RPL Tipe A1 (Transfer Kredit - Nilai Kuliah Formal Sebelumnya)</option>
+                                            <option value="A2">RPL Tipe A2 (Perolehan SKS - Pengalaman Kerja & Pelatihan)</option>
+                                            <option value="A1">RPL Tipe A1 (Transfer SKS - Nilai Kuliah Formal Sebelumnya)</option>
                                             <option value="B">RPL Tipe B (Penyetaraan Kualifikasi KKNI)</option>
                                         </select>
                                     </div>
@@ -256,7 +278,7 @@ export default function FormF02Wizard({
 
                                 <div className="grid sm:grid-cols-2 gap-4">
                                     <Input
-                                        label="Nama Lengkap (Sesuai KTP)"
+                                        label="Nama Lengkap (Sesuai KTP/Ijazah)"
                                         required
                                         disabled={isSubmitted}
                                         value={profileForm.data.nama_lengkap}
@@ -272,14 +294,7 @@ export default function FormF02Wizard({
                                     />
                                 </div>
 
-                                <div className="grid sm:grid-cols-3 gap-4">
-                                    <Input
-                                        label="No. WhatsApp / Telepon"
-                                        required
-                                        disabled={isSubmitted}
-                                        value={profileForm.data.telepon}
-                                        onChange={(e) => profileForm.setData('telepon', e.target.value)}
-                                    />
+                                <div className="grid sm:grid-cols-4 gap-3">
                                     <Input
                                         label="Tempat Lahir"
                                         required
@@ -295,17 +310,97 @@ export default function FormF02Wizard({
                                         value={profileForm.data.tanggal_lahir}
                                         onChange={(e) => profileForm.setData('tanggal_lahir', e.target.value)}
                                     />
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1">Jenis Kelamin *</label>
+                                        <select
+                                            disabled={isSubmitted}
+                                            value={profileForm.data.jenis_kelamin}
+                                            onChange={(e) => profileForm.setData('jenis_kelamin', e.target.value)}
+                                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg"
+                                        >
+                                            <option value="L">Pria</option>
+                                            <option value="P">Wanita</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-semibold text-slate-700 mb-1">Status Pernikahan *</label>
+                                        <select
+                                            disabled={isSubmitted}
+                                            value={profileForm.data.status_pernikahan}
+                                            onChange={(e) => profileForm.setData('status_pernikahan', e.target.value)}
+                                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg"
+                                        >
+                                            <option value="Menikah">Menikah</option>
+                                            <option value="Belum Menikah">Belum Menikah</option>
+                                            <option value="Cerai">Cerai</option>
+                                        </select>
+                                    </div>
                                 </div>
 
-                                <div>
-                                    <label className="block text-xs font-semibold text-slate-700 mb-1">Alamat Lengkap Domisili *</label>
-                                    <textarea
-                                        rows={2}
+                                <div className="grid sm:grid-cols-4 gap-3">
+                                    <div className="sm:col-span-2">
+                                        <Input
+                                            label="Alamat Rumah (Jalan / Dusun)"
+                                            required
+                                            disabled={isSubmitted}
+                                            value={profileForm.data.alamat_lengkap}
+                                            onChange={(e) => profileForm.setData('alamat_lengkap', e.target.value)}
+                                            placeholder="Contoh: DS. BALINGBING"
+                                        />
+                                    </div>
+                                    <Input
+                                        label="RT / RW"
+                                        disabled={isSubmitted}
+                                        value={profileForm.data.rt_rw}
+                                        onChange={(e) => profileForm.setData('rt_rw', e.target.value)}
+                                        placeholder="RT/RW 016/04"
+                                    />
+                                    <Input
+                                        label="Kode Pos"
+                                        disabled={isSubmitted}
+                                        value={profileForm.data.kode_pos}
+                                        onChange={(e) => profileForm.setData('kode_pos', e.target.value)}
+                                        placeholder="42152"
+                                    />
+                                </div>
+
+                                <div className="grid sm:grid-cols-2 gap-3">
+                                    <Input
+                                        label="Kecamatan"
+                                        disabled={isSubmitted}
+                                        value={profileForm.data.kecamatan}
+                                        onChange={(e) => profileForm.setData('kecamatan', e.target.value)}
+                                        placeholder="KEC. PAGADEN BARAT"
+                                    />
+                                    <Input
+                                        label="Kabupaten / Kota"
+                                        disabled={isSubmitted}
+                                        value={profileForm.data.kabupaten_kota}
+                                        onChange={(e) => profileForm.setData('kabupaten_kota', e.target.value)}
+                                        placeholder="KAB. SUBANG"
+                                    />
+                                </div>
+
+                                <div className="grid sm:grid-cols-3 gap-3">
+                                    <Input
+                                        label="No. HP / WhatsApp *"
                                         required
                                         disabled={isSubmitted}
-                                        value={profileForm.data.alamat_lengkap}
-                                        onChange={(e) => profileForm.setData('alamat_lengkap', e.target.value)}
-                                        className="w-full px-3.5 py-2 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                                        value={profileForm.data.telepon}
+                                        onChange={(e) => profileForm.setData('telepon', e.target.value)}
+                                        placeholder="081320741803"
+                                    />
+                                    <Input
+                                        label="No. Telepon Rumah"
+                                        disabled={isSubmitted}
+                                        value={profileForm.data.telepon_rumah}
+                                        onChange={(e) => profileForm.setData('telepon_rumah', e.target.value)}
+                                    />
+                                    <Input
+                                        label="No. Telepon Kantor"
+                                        disabled={isSubmitted}
+                                        value={profileForm.data.telepon_kantor}
+                                        onChange={(e) => profileForm.setData('telepon_kantor', e.target.value)}
                                     />
                                 </div>
 
@@ -325,7 +420,7 @@ export default function FormF02Wizard({
                                 </div>
                             </CardContent>
                             <CardFooter>
-                                <Button type="submit" variant="primary" isLoading={profileForm.processing} disabled={isSubmitted}>
+                                <Button type="submit" variant="primary" isLoading={profileForm.processing} disabled={isSubmitted} className="bg-[#125c50] hover:bg-[#187566] text-white">
                                     Simpan & Lanjut ke Riwayat Pendidikan <ArrowRight className="w-4 h-4 ml-1.5" />
                                 </Button>
                             </CardFooter>
@@ -338,7 +433,7 @@ export default function FormF02Wizard({
                     <Card>
                         <CardHeader>
                             <div>
-                                <CardTitle>Langkah 2: Riwayat Pendidikan Formal</CardTitle>
+                                <CardTitle>Bagian 1.b: Data Pendidikan Formal Calon Mahasiswa</CardTitle>
                                 <p className="text-xs text-slate-500 mt-0.5">Cantumkan riwayat pendidikan formal yang telah diselesaikan</p>
                             </div>
                             {!isSubmitted && (
@@ -351,14 +446,14 @@ export default function FormF02Wizard({
                             <div className="divide-y divide-slate-100">
                                 {!pendaftar?.pendidikan || pendaftar.pendidikan.length === 0 ? (
                                     <div className="p-8 text-center text-slate-400 text-xs">
-                                        Belum ada riwayat pendidikan. Klik tombol di atas untuk menambahkan.
+                                        Belum ada riwayat pendidikan. Klik tombol di atas untuk menambahkan (contoh: SMA/SMK).
                                     </div>
                                 ) : (
                                     pendaftar.pendidikan.map((edu: any) => (
                                         <div key={edu.id} className="py-3 flex items-center justify-between">
                                             <div>
                                                 <span className="font-bold text-sm text-slate-900">{edu.nama_institusi}</span>
-                                                <p className="text-xs text-slate-600">{edu.jenjang} - Jurusan {edu.jurusan} (Lulus {edu.tahun_lulus})</p>
+                                                <p className="text-xs text-slate-600">{edu.jenjang} - {edu.jurusan || 'Semua Jurusan'} (Lulus {edu.tahun_lulus})</p>
                                                 {edu.nomor_ijazah && <p className="text-[11px] font-mono text-slate-400">No. Ijazah: {edu.nomor_ijazah}</p>}
                                             </div>
                                             {!isSubmitted && (
@@ -379,7 +474,7 @@ export default function FormF02Wizard({
                             <Button variant="ghost" size="sm" onClick={() => setCurrentStep(1)}>
                                 <ArrowLeft className="w-4 h-4 mr-1" /> Kembali
                             </Button>
-                            <Button variant="primary" size="sm" onClick={() => setCurrentStep(3)}>
+                            <Button variant="primary" size="sm" onClick={() => setCurrentStep(3)} className="bg-[#125c50] hover:bg-[#187566] text-white">
                                 Lanjut ke Pengalaman Kerja <ArrowRight className="w-4 h-4 ml-1" />
                             </Button>
                         </CardFooter>
@@ -392,7 +487,7 @@ export default function FormF02Wizard({
                         <CardHeader>
                             <div>
                                 <CardTitle>Langkah 3: Riwayat Pengalaman Kerja & Pelatihan</CardTitle>
-                                <p className="text-xs text-slate-500 mt-0.5">Rekam jejak pengalaman profesional yang relevan</p>
+                                <p className="text-xs text-slate-500 mt-0.5">Rekam jejak pengalaman profesional yang relevan dengan mata kuliah yang diajukan</p>
                             </div>
                             {!isSubmitted && (
                                 <Button size="sm" variant="outline" onClick={() => setIsPengalamanModalOpen(true)}>
@@ -411,7 +506,7 @@ export default function FormF02Wizard({
                                         <div key={exp.id} className="py-3.5 flex items-start justify-between gap-4">
                                             <div className="space-y-1">
                                                 <span className="font-bold text-sm text-slate-900">{exp.jabatan_posisi}</span>
-                                                <p className="text-xs font-semibold text-blue-600">{exp.nama_instansi}</p>
+                                                <p className="text-xs font-semibold text-emerald-800">{exp.nama_instansi}</p>
                                                 <p className="text-xs text-slate-600 leading-relaxed">{exp.deskripsi_tugas_kunci}</p>
                                             </div>
                                             {!isSubmitted && (
@@ -432,7 +527,7 @@ export default function FormF02Wizard({
                             <Button variant="ghost" size="sm" onClick={() => setCurrentStep(2)}>
                                 <ArrowLeft className="w-4 h-4 mr-1" /> Kembali
                             </Button>
-                            <Button variant="primary" size="sm" onClick={() => setCurrentStep(4)}>
+                            <Button variant="primary" size="sm" onClick={() => setCurrentStep(4)} className="bg-[#125c50] hover:bg-[#187566] text-white">
                                 Lanjut ke Unggah Portofolio <ArrowRight className="w-4 h-4 ml-1" />
                             </Button>
                         </CardFooter>
@@ -444,13 +539,13 @@ export default function FormF02Wizard({
                     <Card>
                         <CardHeader>
                             <div>
-                                <CardTitle>Langkah 4: Portofolio Bukti Kompetensi</CardTitle>
+                                <CardTitle>Langkah 4: Portofolio Bukti Kompetensi (13 Kategori Resmi)</CardTitle>
                                 <p className="text-xs text-slate-500 mt-0.5">
-                                    Unggah sertifikat, SK jabatan, portofolio proyek (Tervalidasi SHA-256)
+                                    Unggah sertifikat, dokumen analisis, logbook, bukti karya (Tervalidasi SHA-256)
                                 </p>
                             </div>
                             {!isSubmitted && (
-                                <Button size="sm" variant="primary" onClick={() => setIsUploadModalOpen(true)}>
+                                <Button size="sm" variant="primary" onClick={() => setIsUploadModalOpen(true)} className="bg-[#125c50] hover:bg-[#187566] text-white">
                                     <UploadCloud className="w-4 h-4 mr-1.5" /> Unggah Dokumen Baru
                                 </Button>
                             )}
@@ -501,24 +596,26 @@ export default function FormF02Wizard({
                             <Button variant="ghost" size="sm" onClick={() => setCurrentStep(3)}>
                                 <ArrowLeft className="w-4 h-4 mr-1" /> Kembali
                             </Button>
-                            <Button variant="primary" size="sm" onClick={() => setCurrentStep(5)}>
-                                Lanjut ke Pemetaan CPMK <ArrowRight className="w-4 h-4 ml-1" />
+                            <Button variant="primary" size="sm" onClick={() => setCurrentStep(5)} className="bg-[#125c50] hover:bg-[#187566] text-white">
+                                Lanjut ke Pemetaan Mata Kuliah <ArrowRight className="w-4 h-4 ml-1" />
                             </Button>
                         </CardFooter>
                     </Card>
                 )}
 
-                {/* Step 5: Pemetaan CPMK */}
+                {/* Step 5: Bagian 2: Daftar Mata Kuliah & Pemetaan CPMK */}
                 {currentStep === 5 && (
                     <Card>
                         <CardHeader>
                             <div>
-                                <CardTitle>Langkah 5: Pemetaan Capaian Pembelajaran (CPMK)</CardTitle>
-                                <p className="text-xs text-slate-500 mt-0.5">Petakan mata kuliah yang ingin direkognisi</p>
+                                <CardTitle>Bagian 2: Daftar Mata Kuliah yang Diajukan untuk RPL</CardTitle>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                    Pilih mata kuliah dan tentukan apakah melalui <strong>Transfer SKS</strong> (Kuliah Formal) atau <strong>Perolehan SKS</strong> (Pengalaman/Pelatihan).
+                                </p>
                             </div>
                             {!isSubmitted && (
-                                <Button size="sm" variant="primary" onClick={() => setIsKlaimModalOpen(true)}>
-                                    <Plus className="w-4 h-4 mr-1.5" /> Tambah Klaim Mata Kuliah
+                                <Button size="sm" variant="primary" onClick={() => setIsKlaimModalOpen(true)} className="bg-[#125c50] hover:bg-[#187566] text-white">
+                                    <Plus className="w-4 h-4 mr-1.5" /> Tambah Mata Kuliah yang Diajukan
                                 </Button>
                             )}
                         </CardHeader>
@@ -526,7 +623,7 @@ export default function FormF02Wizard({
                             <div className="space-y-4">
                                 {!pendaftar?.klaim || pendaftar.klaim.length === 0 ? (
                                     <div className="p-8 text-center text-slate-400 text-xs border-2 border-dashed border-slate-200 rounded-2xl">
-                                        Belum ada klaim kompetensi mata kuliah. Klik tombol di atas untuk memilih mata kuliah kurikulum.
+                                        Belum ada mata kuliah yang diajukan. Klik tombol di atas untuk memilih mata kuliah dari kurikulum program studi.
                                     </div>
                                 ) : (
                                     pendaftar.klaim.map((k: any) => (
@@ -534,15 +631,18 @@ export default function FormF02Wizard({
                                             <div className="flex flex-wrap items-start justify-between gap-2">
                                                 <div>
                                                     <div className="flex items-center gap-2">
-                                                        <span className="font-mono text-xs font-bold text-blue-600">{k.mata_kuliah?.kode_mk}</span>
+                                                        <span className="font-mono text-xs font-bold text-emerald-800">{k.mata_kuliah?.kode_mk}</span>
                                                         <h4 className="font-bold text-sm text-slate-900">{k.mata_kuliah?.nama_mk}</h4>
                                                         <Badge variant="slate" size="sm">{k.mata_kuliah?.sks} SKS</Badge>
+                                                        <Badge variant={k.jenis_pengajuan === 'transfer_sks' ? 'blue' : 'amber'} size="sm">
+                                                            {k.jenis_pengajuan === 'transfer_sks' ? 'Transfer SKS' : 'Perolehan SKS'}
+                                                        </Badge>
                                                     </div>
                                                     <p className="text-xs text-slate-600 mt-1">{k.deskripsi_pengalaman_relevan}</p>
                                                 </div>
 
                                                 <div className="flex items-center gap-2">
-                                                    <Badge variant="emerald" size="sm">Tingkat: {k.tingkat_kemampuan_diri}</Badge>
+                                                    <Badge variant="emerald" size="sm">Kemampuan: {k.tingkat_kemampuan_diri}</Badge>
                                                     {!isSubmitted && (
                                                         <button
                                                             type="button"
@@ -573,28 +673,39 @@ export default function FormF02Wizard({
                             <Button variant="ghost" size="sm" onClick={() => setCurrentStep(4)}>
                                 <ArrowLeft className="w-4 h-4 mr-1" /> Kembali
                             </Button>
-                            <Button variant="primary" size="sm" onClick={() => setCurrentStep(6)}>
-                                Lanjut ke Final Review & Submit <ArrowRight className="w-4 h-4 ml-1" />
+                            <Button variant="primary" size="sm" onClick={() => setCurrentStep(6)} className="bg-[#125c50] hover:bg-[#187566] text-white">
+                                Lanjut ke Pakta Integritas & Final Submit <ArrowRight className="w-4 h-4 ml-1" />
                             </Button>
                         </CardFooter>
                     </Card>
                 )}
 
-                {/* Step 6: Review & Final Submit */}
+                {/* Step 6: Review & Final Submit + 3 Legal Declarations */}
                 {currentStep === 6 && (
                     <Card>
                         <CardHeader>
-                            <CardTitle>Langkah 6: Pernyataan & Final Submit Berkas RPL</CardTitle>
+                            <CardTitle>Langkah 6: Pakta Integritas & Pernyataan Resmi Pemohon</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <div className="p-5 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 space-y-2">
-                                <div className="flex items-center gap-2 font-bold text-sm text-blue-950">
-                                    <ShieldCheck className="w-5 h-5 text-blue-700" />
-                                    <span>Pernyataan Keaslian dan Kebenaran Dokumen</span>
+                            <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-950 space-y-3">
+                                <div className="flex items-center gap-2 font-bold text-sm text-emerald-950">
+                                    <ShieldCheck className="w-5 h-5 text-emerald-700" />
+                                    <span>Pernyataan dan Pakta Integritas Calon Mahasiswa (Form 2/F02 UIN SSC)</span>
                                 </div>
-                                <p className="leading-relaxed">
-                                    Dengan ini saya menyatakan bahwa seluruh data, riwayat pengalaman kerja, serta berkas portofolio yang saya unggah pada Formulir Evaluasi Diri (Form F-02) ini adalah benar, sah, dan dibuat dengan itikad baik. Apabila di kemudian hari ditemukan pemalsuan berkas, saya bersedia menerima sanksi pembatalan rekognisi sesuai peraturan perundang-undangan.
+                                <p className="font-semibold text-slate-800">
+                                    Bersama ini saya mengajukan permohonan untuk dapat mengikuti Rekognisi Pembelajaran Lampau (RPL) dan dengan ini saya menyatakan bahwa:
                                 </p>
+                                <ol className="list-decimal pl-5 space-y-1.5 leading-relaxed text-slate-800">
+                                    <li>
+                                        Semua informasi yang saya tuliskan adalah sepenuhnya benar dan saya bertanggung-jawab atas seluruh data dalam formulir ini, dan apabila di kemudian hari ternyata informasi yang saya sampaikan tersebut adalah tidak benar, maka saya bersedia menerima sanksi sesuai dengan ketentuan yang berlaku;
+                                    </li>
+                                    <li>
+                                        Saya memberikan izin kepada pihak pengelola program RPL, untuk melakukan pemeriksaan kebenaran informasi yang saya berikan dalam formulir aplikasi ini kepada seluruh pihak yang terkait dengan jenjang akademik sebelumnya dan kepada perusahaan tempat saya bekerja sebelumnya dan atau saat ini saya bekerja; dan
+                                    </li>
+                                    <li>
+                                        Saya akan mengikuti proses asesmen sesuai dengan jadwal/waktu yang ditetapkan oleh Perguruan Tinggi.
+                                    </li>
+                                </ol>
                             </div>
 
                             <div className="grid sm:grid-cols-3 gap-4 text-center">
@@ -607,8 +718,10 @@ export default function FormF02Wizard({
                                     <h4 className="text-xl font-bold text-slate-900 mt-1">{pendaftar?.klaim?.length || 0} MK</h4>
                                 </div>
                                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                                    <span className="text-xs text-slate-500 font-semibold">SLA Verifikasi Admin</span>
-                                    <h4 className="text-xl font-bold text-blue-600 mt-1">3 Hari Kerja</h4>
+                                    <span className="text-xs text-slate-500 font-semibold">Dokumen Siap Cetak</span>
+                                    <Link href="/form-f02/print" target="_blank" className="text-xs font-bold text-emerald-700 hover:underline block mt-2">
+                                        Lihat Preview Form 2/F02 &rarr;
+                                    </Link>
                                 </div>
                             </div>
                         </CardContent>
@@ -617,11 +730,11 @@ export default function FormF02Wizard({
                                 <ArrowLeft className="w-4 h-4 mr-1" /> Kembali
                             </Button>
                             {!isSubmitted ? (
-                                <Button variant="primary" size="lg" onClick={handleSubmitFinal} className="shadow-lg shadow-blue-600/40">
-                                    <Send className="w-4 h-4 mr-2" /> Submit Final Form F-02
+                                <Button variant="primary" size="lg" onClick={handleSubmitFinal} className="bg-[#125c50] hover:bg-[#187566] text-white shadow-lg shadow-emerald-900/30">
+                                    <Send className="w-4 h-4 mr-2" /> Submit Final Form 2/F02
                                 </Button>
                             ) : (
-                                <Badge variant="emerald" size="md">Berkas Telah Dikirim</Badge>
+                                <Badge variant="emerald" size="md">Formulir Telah Dikirim Resmi</Badge>
                             )}
                         </CardFooter>
                     </Card>
@@ -643,7 +756,7 @@ export default function FormF02Wizard({
                             required
                             accept=".pdf,.jpg,.jpeg,.png"
                             onChange={(e) => uploadForm.setData('file', e.target.files?.[0] || null)}
-                            className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                            className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-800 hover:file:bg-emerald-100 cursor-pointer"
                         />
                     </div>
 
@@ -652,16 +765,16 @@ export default function FormF02Wizard({
                         required
                         value={uploadForm.data.nama_dokumen}
                         onChange={(e) => uploadForm.setData('nama_dokumen', e.target.value)}
-                        placeholder="Contoh: Sertifikat Certified Ethical Hacker (CEH)"
+                        placeholder="Contoh: Sertifikat Guru BK Profesional / BNSP"
                     />
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-700 mb-1">Jenis Bukti *</label>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Jenis Bukti (13 Kategori) *</label>
                             <select
                                 value={uploadForm.data.jenis_bukti}
                                 onChange={(e) => uploadForm.setData('jenis_bukti', e.target.value)}
-                                className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg"
+                                className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg font-medium"
                             >
                                 {documentTypes.map((dt) => (
                                     <option key={dt.value} value={dt.value}>{dt.label}</option>
@@ -680,12 +793,12 @@ export default function FormF02Wizard({
                         label="Lembaga / Institusi Penerbit"
                         value={uploadForm.data.penerbit_institusi}
                         onChange={(e) => uploadForm.setData('penerbit_institusi', e.target.value)}
-                        placeholder="Contoh: EC-Council / BNSP / PT Asal"
+                        placeholder="Contoh: Kemendikbudristek / BNSP / PT Asal"
                     />
 
                     <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="ghost" onClick={() => setIsUploadModalOpen(false)}>Batal</Button>
-                        <Button type="submit" variant="primary" isLoading={uploadForm.processing}>Unggah Berkas</Button>
+                        <Button type="submit" variant="primary" isLoading={uploadForm.processing} className="bg-[#125c50] hover:bg-[#187566] text-white">Unggah Berkas</Button>
                     </div>
                 </form>
             </Modal>
@@ -694,8 +807,8 @@ export default function FormF02Wizard({
             <Modal
                 isOpen={isKlaimModalOpen}
                 onClose={() => setIsKlaimModalOpen(false)}
-                title="Pemetaan Klaim Kompetensi Mata Kuliah"
-                description="Pilih mata kuliah dan tautkan dokumen portofolio pendukung"
+                title="Pemetaan Pengajuan Mata Kuliah (Transfer / Perolehan SKS)"
+                description="Pilih mata kuliah kurikulum dan tentukan skema rekognisi serta bukti portofolio"
                 size="lg"
             >
                 <form onSubmit={handleSaveKlaim} className="space-y-4">
@@ -717,14 +830,26 @@ export default function FormF02Wizard({
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1">Deskripsi Pengalaman & Penguasaan Relevan *</label>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Keterangan Skema Pengajuan *</label>
+                        <select
+                            value={klaimForm.data.jenis_pengajuan}
+                            onChange={(e) => klaimForm.setData('jenis_pengajuan', e.target.value)}
+                            className="w-full px-3.5 py-2 text-xs bg-white border border-slate-300 rounded-xl font-bold text-emerald-800"
+                        >
+                            <option value="perolehan_sks">Perolehan SKS (Berdasarkan Pengalaman Kerja / Pelatihan / Nonformal)</option>
+                            <option value="transfer_sks">Transfer SKS (Berdasarkan Nilai Kuliah Formal Sebelumnya)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">Uraian Bukti / Pengalaman Relevan *</label>
                         <textarea
                             rows={3}
                             required
                             value={klaimForm.data.deskripsi_pengalaman_relevan}
                             onChange={(e) => klaimForm.setData('deskripsi_pengalaman_relevan', e.target.value)}
-                            placeholder="Jelaskan proyek, tugas kunci, atau pelatihan yang membuktikan Anda telah menguasai materi mata kuliah ini..."
-                            className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                            placeholder="Jelaskan pengalaman tugas, silabus kuliah sebelumnya, atau sertifikasi yang membuktikan kompetensi mata kuliah ini..."
+                            className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500"
                         />
                     </div>
 
@@ -743,7 +868,7 @@ export default function FormF02Wizard({
                                                 klaimForm.setData('bukti_ids', klaimForm.data.bukti_ids.filter((id) => id !== b.id));
                                             }
                                         }}
-                                        className="rounded border-slate-300 text-blue-600"
+                                        className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                                     />
                                     <span className="font-medium text-slate-800">{b.nama_dokumen}</span>
                                     <Badge variant="slate" size="sm">{b.jenis_bukti}</Badge>
@@ -754,7 +879,7 @@ export default function FormF02Wizard({
 
                     <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="ghost" onClick={() => setIsKlaimModalOpen(false)}>Batal</Button>
-                        <Button type="submit" variant="primary" isLoading={klaimForm.processing}>Simpan Pemetaan Klaim</Button>
+                        <Button type="submit" variant="primary" isLoading={klaimForm.processing} className="bg-[#125c50] hover:bg-[#187566] text-white">Simpan Pengajuan MK</Button>
                     </div>
                 </form>
             </Modal>
@@ -763,38 +888,46 @@ export default function FormF02Wizard({
             <Modal
                 isOpen={isPendidikanModalOpen}
                 onClose={() => setIsPendidikanModalOpen(false)}
-                title="Tambah Riwayat Pendidikan"
+                title="Tambah Riwayat Pendidikan Formal"
             >
                 <form onSubmit={handleSavePendidikan} className="space-y-4">
                     <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1">Pendidikan Terakhir *</label>
+                            <select
+                                value={pendidikanForm.data.jenjang}
+                                onChange={(e) => pendidikanForm.setData('jenjang', e.target.value)}
+                                className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-lg"
+                            >
+                                <option value="SMA">SMA</option>
+                                <option value="SMK">SMK</option>
+                                <option value="MA">MA</option>
+                                <option value="D3">Diploma 3 (D3)</option>
+                                <option value="D4/S1">Sarjana (S1 / D4)</option>
+                            </select>
+                        </div>
                         <Input
-                            label="Jenjang Pendidikan"
-                            required
-                            value={pendidikanForm.data.jenjang}
-                            onChange={(e) => pendidikanForm.setData('jenjang', e.target.value)}
-                        />
-                        <Input
-                            label="Tahun Kelulusan"
+                            label="Tahun Kelulusan *"
                             required
                             value={pendidikanForm.data.tahun_lulus}
                             onChange={(e) => pendidikanForm.setData('tahun_lulus', e.target.value)}
                         />
                     </div>
                     <Input
-                        label="Nama Sekolah / Perguruan Tinggi"
+                        label="Nama Perguruan Tinggi / Sekolah *"
                         required
                         value={pendidikanForm.data.nama_institusi}
                         onChange={(e) => pendidikanForm.setData('nama_institusi', e.target.value)}
+                        placeholder="Contoh: SMAN 2 CIREBON / Universitas Asal"
                     />
                     <Input
-                        label="Jurusan / Program Studi"
-                        required
+                        label="Program Studi / Jurusan (Dikosongkan jika SMA)"
                         value={pendidikanForm.data.jurusan}
                         onChange={(e) => pendidikanForm.setData('jurusan', e.target.value)}
                     />
                     <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="ghost" onClick={() => setIsPendidikanModalOpen(false)}>Batal</Button>
-                        <Button type="submit" variant="primary" isLoading={pendidikanForm.processing}>Simpan Data</Button>
+                        <Button type="submit" variant="primary" isLoading={pendidikanForm.processing} className="bg-[#125c50] hover:bg-[#187566] text-white">Simpan Data</Button>
                     </div>
                 </form>
             </Modal>
@@ -845,7 +978,7 @@ export default function FormF02Wizard({
                     </div>
                     <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="ghost" onClick={() => setIsPengalamanModalOpen(false)}>Batal</Button>
-                        <Button type="submit" variant="primary" isLoading={pengalamanForm.processing}>Simpan Pengalaman</Button>
+                        <Button type="submit" variant="primary" isLoading={pengalamanForm.processing} className="bg-[#125c50] hover:bg-[#187566] text-white">Simpan Pengalaman</Button>
                     </div>
                 </form>
             </Modal>
