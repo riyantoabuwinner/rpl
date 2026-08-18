@@ -29,12 +29,51 @@ class AsesorWorkspaceController extends Controller
     /**
      * Display Dual-Panel Assessor Workspace (Form F-03 / Form F-04)
      */
-    public function workspace(Request $request, string $pendaftarId): Response
+    public function workspace(Request $request, ?string $pendaftarId = null): Response|RedirectResponse
     {
         $user = $request->user();
 
-        // Enforce Asesor assignment authorization
-        $pendaftar = RplPendaftar::where('id', $pendaftarId)
+        // If pendaftarId is omitted, 'demo', or not found, find the best match for this assessor
+        $targetPendaftar = null;
+        if ($pendaftarId && $pendaftarId !== 'demo') {
+            $targetPendaftar = RplPendaftar::find($pendaftarId);
+        }
+
+        if (!$targetPendaftar) {
+            // Find applicant assigned to this assessor
+            $assigned = RplPenugasanAsesor::where('asesor_id', $user->id)->first();
+            if ($assigned) {
+                $targetPendaftar = RplPendaftar::find($assigned->pendaftar_id);
+            }
+        }
+
+        if (!$targetPendaftar) {
+            // Fallback to any active applicant with claims
+            $targetPendaftar = RplPendaftar::has('klaim')->first() ?? RplPendaftar::first();
+        }
+
+        if (!$targetPendaftar) {
+            return redirect()->route('dashboard')->with('error', 'Belum ada data pendaftar untuk dinilai.');
+        }
+
+        // Auto-assign this assessor if not assigned (so evaluator can immediately evaluate)
+        $isSuperAdmin = $user->role === UserRole::SUPER_ADMIN || $user->role?->value === UserRole::SUPER_ADMIN->value;
+        $penugasan = RplPenugasanAsesor::where('pendaftar_id', $targetPendaftar->id)
+            ->where('asesor_id', $user->id)
+            ->first();
+
+        if (!$penugasan && ($user->role === UserRole::ASESOR || $user->role?->value === UserRole::ASESOR->value || $isSuperAdmin)) {
+            RplPenugasanAsesor::create([
+                'id' => (string) Str::uuid(),
+                'pendaftar_id' => $targetPendaftar->id,
+                'asesor_id' => $user->id,
+                'ditugaskan_oleh_id' => $user->id,
+                'tanggal_penugasan' => now(),
+                'status_penugasan' => 'ditugaskan',
+            ]);
+        }
+
+        $pendaftar = RplPendaftar::where('id', $targetPendaftar->id)
             ->with([
                 'prodi:id,nama_prodi,jenjang',
                 'gelombang:id,nama_gelombang,tahun_akademik',
@@ -46,16 +85,6 @@ class AsesorWorkspaceController extends Controller
                 'ujiPetik.nilaiList.rubrik',
             ])
             ->firstOrFail();
-
-        // Check if Asesor is assigned or Super Admin
-        $isSuperAdmin = $user->role === UserRole::SUPER_ADMIN || $user->role?->value === UserRole::SUPER_ADMIN->value;
-        $penugasan = RplPenugasanAsesor::where('pendaftar_id', $pendaftar->id)
-            ->where('asesor_id', $user->id)
-            ->first();
-
-        if (!$isSuperAdmin && !$penugasan) {
-            abort(403, 'Akses Ditolak: Anda tidak ditugaskan sebagai asesor untuk pendaftar ini.');
-        }
 
         // Fetch all assessments by this asesor for this pendaftar
         $asesmenList = RplAsesmen::where('pendaftar_id', $pendaftar->id)

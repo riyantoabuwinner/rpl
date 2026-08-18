@@ -106,7 +106,7 @@ export const AppLayout: React.FC<{
         },
         {
             label: 'Penilaian Portofolio',
-            href: '/asesor/workspace/demo',
+            href: '/asesor/penilaian',
             icon: ClipboardCheck,
             active: currentUrl.startsWith('/asesor'),
             roles: ['super_admin', 'asesor', 'admin_rpl'],

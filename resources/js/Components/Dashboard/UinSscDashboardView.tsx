@@ -673,7 +673,7 @@ export function UinSscDashboardView() {
 
                         {/* 2. Penilaian Portofolio */}
                         <Link
-                            href="/admin/pendaftar"
+                            href="/asesor/penilaian"
                             className="p-3 rounded-2xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-center transition-all flex flex-col items-center gap-2 group shadow-2xs"
                         >
                             <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center group-hover:scale-105 transition-transform">

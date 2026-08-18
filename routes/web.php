@@ -82,7 +82,9 @@ Route::middleware('auth')->group(function () {
 
     // Asesor Dual-Panel Workspace
     Route::prefix('asesor')->name('asesor.')->group(function () {
-        Route::get('/workspace/{pendaftarId}', [AsesorWorkspaceController::class, 'workspace'])->name('workspace');
+        Route::get('/', [AsesorWorkspaceController::class, 'workspace'])->name('index');
+        Route::get('/penilaian', [AsesorWorkspaceController::class, 'workspace'])->name('penilaian');
+        Route::get('/workspace/{pendaftarId?}', [AsesorWorkspaceController::class, 'workspace'])->name('workspace');
         Route::post('/assessment', [AsesorWorkspaceController::class, 'saveAssessment'])->name('assessment.save');
         Route::post('/finalize/{pendaftarId}', [AsesorWorkspaceController::class, 'finalizeAll'])->name('finalize');
     });
