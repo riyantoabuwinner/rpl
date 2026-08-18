@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentViewerController;
 use App\Http\Controllers\MasterDataController;
+use App\Http\Controllers\PanduanController;
 use App\Http\Controllers\PendaftarController;
 use App\Http\Controllers\PlenoController;
 use App\Http\Controllers\PublicVerificationController;
@@ -53,6 +54,9 @@ Route::middleware('auth')->group(function () {
 
     // Central Role-Based Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Buku Panduan Sistem Pengguna (Semua Role)
+    Route::get('/panduan', [PanduanController::class, 'index'])->name('panduan');
 
     // Form F-02 Multi-Step Wizard (Asesi)
     Route::prefix('form-f02')->name('form-f02.')->group(function () {

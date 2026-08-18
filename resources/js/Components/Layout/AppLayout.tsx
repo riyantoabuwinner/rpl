@@ -146,6 +146,13 @@ export const AppLayout: React.FC<{
             active: currentUrl.startsWith('/master-data'),
             roles: ['super_admin', 'admin_rpl', 'kaprodi', 'lpm'],
         },
+        {
+            label: 'Panduan Sistem',
+            href: '/panduan',
+            icon: BookOpen,
+            active: currentUrl.startsWith('/panduan'),
+            roles: ['super_admin', 'admin_rpl', 'asesi', 'asesor', 'kaprodi', 'lpm', 'admin_siakad'],
+        },
     ];
 
     const filteredNav = navItems.filter((item) => item.roles.includes(userRole));
