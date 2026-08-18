@@ -19,6 +19,7 @@ import {
     Sparkles,
     CheckSquare,
     Square,
+    Printer,
 } from 'lucide-react';
 import { AppLayout } from '@/Components/Layout/AppLayout';
 import { PdfImageViewer, DocumentItem, WatermarkProps } from '@/Components/DocumentViewer/PdfImageViewer';
@@ -230,14 +231,24 @@ export default function AsesorWorkspace({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <Link href={`/form-f02/print/${pendaftar.id}`} target="_blank">
+                            <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs">
+                                <Printer className="w-3.5 h-3.5 mr-1" /> Form F-02
+                            </Button>
+                        </Link>
+                        <Link href={`/form-f03/print/${pendaftar.id}`} target="_blank">
+                            <Button variant="outline" size="sm" className="bg-white/10 text-white border-white/20 hover:bg-white/20 text-xs">
+                                <Printer className="w-3.5 h-3.5 mr-1" /> Form F-03 (Evaluasi Diri)
+                            </Button>
+                        </Link>
                         <Button
                             variant="success"
                             size="sm"
                             onClick={handleFinalizeAll}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-950/40"
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-md shadow-emerald-950/40 text-xs"
                         >
-                            <Award className="w-4 h-4 mr-1.5" /> Finalisasi & Ajukan ke Sidang Pleno
+                            <Award className="w-4 h-4 mr-1.5" /> Finalisasi ke Pleno
                         </Button>
                     </div>
                 </div>

@@ -141,6 +141,11 @@ class RplPendaftar extends Model
         return $this->hasMany(RplSanggah::class, 'pendaftar_id');
     }
 
+    public function evaluasiDiriCpmk(): HasMany
+    {
+        return $this->hasMany(RplEvaluasiDiriCpmk::class, 'pendaftar_id');
+    }
+
     // Masked NIK Attribute
     public function getMaskedNikAttribute(): string
     {

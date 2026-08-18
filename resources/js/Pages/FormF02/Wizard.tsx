@@ -197,11 +197,18 @@ export default function FormF02Wizard({
 
                     <div className="flex items-center gap-2">
                         {pendaftar && (
-                            <Link href="/form-f02/print" target="_blank">
-                                <Button variant="outline" size="sm" className="bg-white/10 text-white border-emerald-400/40 hover:bg-white/20">
-                                    <Printer className="w-4 h-4 mr-1.5" /> Cetak Dokumen F-02
-                                </Button>
-                            </Link>
+                            <>
+                                <Link href="/form-f02/print" target="_blank">
+                                    <Button variant="outline" size="sm" className="bg-white/10 text-white border-emerald-400/40 hover:bg-white/20">
+                                        <Printer className="w-4 h-4 mr-1.5" /> Cetak F-02
+                                    </Button>
+                                </Link>
+                                <Link href={`/form-f03/print/${pendaftar.id}`} target="_blank">
+                                    <Button variant="outline" size="sm" className="bg-white/10 text-white border-emerald-400/40 hover:bg-white/20">
+                                        <Printer className="w-4 h-4 mr-1.5" /> Cetak F-03 (Evaluasi Diri)
+                                    </Button>
+                                </Link>
+                            </>
                         )}
                         {isSubmitted && (
                             <Badge variant="emerald" size="md" className="bg-emerald-500/20 text-emerald-300 border-emerald-400 text-sm px-3.5 py-1.5">

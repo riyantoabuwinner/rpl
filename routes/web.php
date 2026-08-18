@@ -66,9 +66,13 @@ Route::middleware('auth')->group(function () {
         Route::delete('/bukti/{id}', [PendaftarController::class, 'deleteBukti'])->name('bukti.delete');
         Route::post('/klaim', [PendaftarController::class, 'saveKlaim'])->name('klaim');
         Route::delete('/klaim/{id}', [PendaftarController::class, 'deleteKlaim'])->name('klaim.delete');
+        Route::post('/evaluasi-diri-f03', [PendaftarController::class, 'saveEvaluasiDiriF03'])->name('evaluasi_diri_f03.store');
         Route::post('/submit', [PendaftarController::class, 'submitForm'])->name('submit');
         Route::get('/print/{id?}', [PendaftarController::class, 'printFormF02'])->name('print');
     });
+
+    // Form 3/F03 Formulir Evaluasi Diri Calon Mahasiswa Print Route
+    Route::get('/form-f03/print/{pendaftarId?}/{mataKuliahId?}', [PendaftarController::class, 'printFormF03'])->name('form-f03.print');
 
     // Pendaftar Management & Administration (Admin Pusat RPL, Super Admin)
     Route::prefix('admin/pendaftar')->name('admin.pendaftar.')->group(function () {

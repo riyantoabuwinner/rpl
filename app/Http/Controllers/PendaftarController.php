@@ -503,4 +503,84 @@ class PendaftarController extends Controller
             'pendaftar' => $pendaftar,
         ]);
     }
+
+    /**
+     * Save Form 3/F03 self-evaluation matrix item
+     */
+    public function saveEvaluasiDiriF03(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $pendaftar = RplPendaftar::where('user_id', $user->id)->firstOrFail();
+
+        $validated = $request->validate([
+            'mata_kuliah_id' => 'required|uuid|exists:mata_kuliah,id',
+            'items' => 'required|array|min:1',
+            'items.*.nomor_urut' => 'required|integer',
+            'items.*.pernyataan_cpmk' => 'required|string',
+            'items.*.profisiensi' => 'required|in:sangat_baik,baik,tidak_pernah',
+            'items.*.nomor_dokumen' => 'nullable|string|max:50',
+            'items.*.jenis_dokumen' => 'nullable|string|max:255',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            foreach ($validated['items'] as $item) {
+                \App\Models\RplEvaluasiDiriCpmk::updateOrCreate(
+                    [
+                        'pendaftar_id' => $pendaftar->id,
+                        'mata_kuliah_id' => $validated['mata_kuliah_id'],
+                        'nomor_urut' => $item['nomor_urut'],
+                    ],
+                    [
+                        'id' => (string) Str::uuid(),
+                        'pernyataan_cpmk' => $item['pernyataan_cpmk'],
+                        'profisiensi' => $item['profisiensi'],
+                        'nomor_dokumen' => $item['nomor_dokumen'] ?? null,
+                        'jenis_dokumen' => $item['jenis_dokumen'] ?? null,
+                    ]
+                );
+            }
+
+            DB::commit();
+            return back()->with('success', 'Formulir Evaluasi Diri (Form 3/F03) berhasil disimpan.');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal menyimpan evaluasi diri: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Render official Form 3/F03 printable document matching UIN SSC specification
+     */
+    public function printFormF03(Request $request, ?string $pendaftarId = null, ?string $mataKuliahId = null): Response
+    {
+        $user = $request->user();
+
+        $targetPendaftarId = $pendaftarId;
+        if (!$targetPendaftarId || $targetPendaftarId === 'me') {
+            $pendaftar = RplPendaftar::where('user_id', $user->id)->firstOrFail();
+            $targetPendaftarId = $pendaftar->id;
+        }
+
+        $pendaftar = RplPendaftar::with([
+            'gelombang',
+            'prodi.kurikulum.mataKuliah.cpmk.indikator',
+            'pendidikan',
+            'pengalaman',
+            'bukti',
+            'klaim.mataKuliah',
+            'klaim.bukti',
+            'evaluasiDiriCpmk',
+        ])->findOrFail($targetPendaftarId);
+
+        $selectedCourse = null;
+        if ($mataKuliahId) {
+            $selectedCourse = \App\Models\MataKuliah::with(['kurikulum', 'cpmk.indikator'])->find($mataKuliahId);
+        }
+
+        return Inertia::render('FormF02/PrintF03', [
+            'pendaftar' => $pendaftar,
+            'selectedCourse' => $selectedCourse,
+        ]);
+    }
 }
