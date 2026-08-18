@@ -95,6 +95,15 @@ class UserSeeder extends Seeder
                 'password' => $defaultPassword,
                 'email_verified_at' => now(),
             ],
+            [
+                'name' => 'Toheri (Calon Asesi Tadris Matematika)',
+                'email' => 'toheri@uinssc.ac.id',
+                'nik' => '3213011607730001',
+                'phone' => '081320741803',
+                'role' => UserRole::ASESI,
+                'password' => $defaultPassword,
+                'email_verified_at' => now(),
+            ],
         ];
 
         foreach ($users as $userData) {

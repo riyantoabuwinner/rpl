@@ -246,5 +246,199 @@ class RplWorkflowSampleSeeder extends Seeder
             'total_nilai_angka' => 0.00,
             'ipk_rekognisi' => 0.00,
         ]);
+
+        // 3. Pendaftar 3: Toheri (Tadris Matematika - Form 2/F02 & Form 3/F03 UIN SSC)
+        $userToheri = User::where('email', 'toheri@uinssc.ac.id')->first();
+        $prodiTmt = Prodi::where('kode_prodi', 'TMT')->first();
+        $mkKalkulusDiff = MataKuliah::where('kode_mk', 'TMT625006')->first();
+        $mkKalkulusInt = MataKuliah::where('kode_mk', 'TMT625015')->first();
+
+        if ($userToheri && $prodiTmt) {
+            $pendaftarToheri = RplPendaftar::create([
+                'id' => (string) Str::uuid(),
+                'user_id' => $userToheri->id,
+                'gelombang_id' => $gelombang->id,
+                'prodi_id' => $prodiTmt->id,
+                'nomor_pendaftaran' => 'RPL-2026-0003',
+                'nama_lengkap' => 'TOHERI',
+                'nik' => '3213011607730001',
+                'email' => 'toheri@uinssc.ac.id',
+                'telepon' => '081320741803',
+                'telepon_rumah' => '0260-412345',
+                'telepon_kantor' => '0231-481264',
+                'jenis_kelamin' => 'L',
+                'status_pernikahan' => 'Menikah',
+                'kebangsaan' => 'INDONESIA',
+                'tempat_lahir' => 'CIREBON',
+                'tanggal_lahir' => '1973-07-16',
+                'alamat_lengkap' => 'DS. BALINGBING',
+                'rt_rw' => '016/004',
+                'kecamatan' => 'PAGADEN BARAT',
+                'kabupaten_kota' => 'KAB. SUBANG',
+                'kode_pos' => '42152',
+                'pekerjaan_saat_ini' => 'Pengajar / Praktisi Matematika',
+                'instansi_pekerjaan' => 'Lembaga Pendidikan & Pelatihan Sains',
+                'jenis_rpl' => RplType::A2,
+                'status_pendaftaran' => ApplicationStatus::PROSES_ASESMEN,
+                'tanggal_submit' => now()->subDays(2),
+                'sla_verifikasi_due_at' => now()->subDays(1),
+                'sla_asesmen_due_at' => now()->addDays(5),
+                'tanggal_verifikasi' => now()->subDay(),
+                'verifikator_id' => $adminRpl?->id,
+                'catatan_verifikasi' => 'Berkas pendaftaran Form 2/F02 dan Form 3/F03 lengkap.',
+                'total_sks_diakui' => 6,
+                'total_nilai_angka' => 4.00,
+                'ipk_rekognisi' => 4.00,
+            ]);
+
+            // Pendidikan Toheri
+            RplPendidikan::create([
+                'id' => (string) Str::uuid(),
+                'pendaftar_id' => $pendaftarToheri->id,
+                'jenjang' => 'SMA',
+                'nama_institusi' => 'SMAN 2 CIREBON',
+                'jurusan' => 'IPA',
+                'tahun_lulus' => '1992',
+            ]);
+
+            // Pengalaman Toheri
+            RplPengalaman::create([
+                'id' => (string) Str::uuid(),
+                'pendaftar_id' => $pendaftarToheri->id,
+                'nama_instansi' => 'Pusat Bimbingan Belajar Cirebon & Subang',
+                'jabatan_posisi' => 'Tutor Senior Kalkulus & Matematika Diskrit',
+                'tanggal_mulai' => '2010-01-01',
+                'tanggal_selesai' => null,
+                'is_masih_bekerja' => true,
+                'deskripsi_tugas_kunci' => 'Mengajar dan membimbing mahasiswa dalam pemecahan masalah turunan, integral, limit, dan transformasi fungsi berbantuan software GeoGebra.',
+            ]);
+
+            // Bukti Portofolio Toheri
+            $buktiToheri1 = RplBuktiAsesi::create([
+                'id' => (string) Str::uuid(),
+                'pendaftar_id' => $pendaftarToheri->id,
+                'nama_dokumen' => 'Transkrip Nilai Akademik & Modul Kalkulus',
+                'jenis_bukti' => DocumentType::CATATAN_PELATIHAN,
+                'file_path' => 'portofolio/toheri_transkrip.pdf',
+                'file_original_name' => 'toheri_transkrip.pdf',
+                'file_hash' => hash('sha256', 'sample_transkrip_toheri'),
+                'file_size' => 1024 * 350,
+                'mime_type' => 'application/pdf',
+                'tahun_penerbitan' => '2023',
+                'penerbit_institusi' => 'Lembaga Pendidikan Matematika Terapan',
+                'deskripsi_dokumen' => 'Transkrip nilai pelatihan dan modul pembelajaran materi Kalkulus Differensial dan Integral.',
+            ]);
+
+            $buktiToheri2 = RplBuktiAsesi::create([
+                'id' => (string) Str::uuid(),
+                'pendaftar_id' => $pendaftarToheri->id,
+                'nama_dokumen' => 'Surat Keterangan Tutor & Asisten Praktikum Kalkulus',
+                'jenis_bukti' => DocumentType::SURAT_VERIFIKASI_PIHAK_KETIGA,
+                'file_path' => 'portofolio/toheri_sk_tutor.pdf',
+                'file_original_name' => 'toheri_sk_tutor.pdf',
+                'file_hash' => hash('sha256', 'sample_sk_tutor_toheri'),
+                'file_size' => 1024 * 220,
+                'mime_type' => 'application/pdf',
+                'tahun_penerbitan' => '2024',
+                'penerbit_institusi' => 'Pusat Bimbingan Belajar Cirebon',
+                'deskripsi_dokumen' => 'Surat rekomendasi dan verifikasi pengalaman menjadi tutor kalkulus integral dan diferensial selama 10 tahun.',
+            ]);
+
+            // Klaim MK
+            if ($mkKalkulusDiff) {
+                $klaimDiff = RplKlaimCpmk::create([
+                    'id' => (string) Str::uuid(),
+                    'pendaftar_id' => $pendaftarToheri->id,
+                    'mata_kuliah_id' => $mkKalkulusDiff->id,
+                    'jenis_pengajuan' => 'transfer_sks',
+                    'deskripsi_pengalaman_relevan' => 'Memiliki kompetensi mendalam mengenai fungsi aljabar, limit fungsi, turunan polinom dan trigonometri, serta aplikasi software GeoGebra.',
+                    'tingkat_kemampuan_diri' => 'Sangat Baik',
+                ]);
+                $klaimDiff->bukti()->sync([$buktiToheri1->id, $buktiToheri2->id]);
+            }
+
+            if ($mkKalkulusInt) {
+                $klaimInt = RplKlaimCpmk::create([
+                    'id' => (string) Str::uuid(),
+                    'pendaftar_id' => $pendaftarToheri->id,
+                    'mata_kuliah_id' => $mkKalkulusInt->id,
+                    'jenis_pengajuan' => 'perolehan_sks',
+                    'deskripsi_pengalaman_relevan' => 'Berpengalaman 10 tahun sebagai tutor materi integral tentu, anti turunan, dan volume benda putar.',
+                    'tingkat_kemampuan_diri' => 'Sangat Baik',
+                ]);
+                $klaimInt->bukti()->sync([$buktiToheri1->id, $buktiToheri2->id]);
+            }
+
+            // Form 3/F03 Evaluasi Diri Items (Kalkulus Differensial)
+            if ($mkKalkulusDiff) {
+                $f03DiffItems = [
+                    'mampu menganalisis domain, range, grafik, dan karakteristik Fungsi berdasarkan grafiknya untuk persamaan linear, kuadrat, kubik, pecahan, akar dan trigonometri dasar secara mandiri.',
+                    'Mampu menentukan keputusan hasil transformasi Fungsi berupa refleksi, rotasi, dilatasi, komposisi fungsi secara manual dan menggunakan software.',
+                    'mampu menggunakan definisi Limit Fungsi secara intuitif dan formal, menggunakan Sifat-Sifat Limit Fungsi secara tepat sesuai dengan jenis fungsi secara manual dan menggunakan software geogebra.',
+                    'Mampu membuktikan nilai limit secara intuisi dan formal serta menentukan penyelesaian yang berkaitan dengan Limit Fungsi Trigonometri dasar secara aljabar dan menggunakan software.',
+                    'Menganalisis Teorema-teorema dan sifat-sifat yang tepat untuk menentukan nilai limit fungsi yang diberikan dan menggunakan geogebra untuk penentuan nilai limit.',
+                    'Mampu menganalisis kesamaan ide Pendekatan sebagai landasan dalam mendefinisikan Turunan untuk menentukan turunan dari sebuah fungsi serta merepresentasikan melalui geogebra.',
+                    'Mampu mengidentifikasi dan membuktikan beberapa Sifat-sifat turunan Fungsi serta mengilustrasikan melalui aplikasi geogebra.',
+                    'Mampu membuktikan dan menggunakan teorema-teorema turunan dalam rangka menyelesaikan permasalahan turunan fungsi secara manual dan berbantuan geogebra.',
+                    'Mampu memutuskan penyelesaian dari permasalah yang melibatkan turunan untuk menentukan nilai maksimum dan minimum fungsi polinom dan pecahan secara manual dan geogebra.',
+                    'Mampu memutuskan prosedur yang tepat dalam menggunakan turunan untuk menemukan solusi dari masalah praktis yang dihadapi.',
+                    'Mampu menganalisis kecenderungan nilai limit di ketakhinggaan, takhingga, dan menggunakannya untuk menentukan jenis Asimtot dari sebuah fungsi dan mengilustrasikannya melalui geogebra.',
+                    'Mampu menganalisis perilaku grafik yang memiliki Kemonotonan dan kecekungan melalui turunan pertama dan kedua serta mengamati pola grafik yang dibuat melalui geogebra.',
+                    'Mampu menganalisis grafik secara tepat dengan menggunakan Turunan dan geogebra untuk fungsi polinom dan trigonometri serta campurannya.',
+                ];
+
+                foreach ($f03DiffItems as $idx => $pernyataan) {
+                    \App\Models\RplEvaluasiDiriCpmk::create([
+                        'id' => (string) Str::uuid(),
+                        'pendaftar_id' => $pendaftarToheri->id,
+                        'mata_kuliah_id' => $mkKalkulusDiff->id,
+                        'nomor_urut' => $idx + 1,
+                        'pernyataan_cpmk' => $pernyataan,
+                        'profisiensi' => ($idx === 4 || $idx === 12) ? 'baik' : 'sangat_baik',
+                        'is_valid' => true,
+                        'is_autentik' => true,
+                        'is_terkini' => true,
+                        'is_memadai' => true,
+                        'nomor_dokumen' => 'Dok. 1',
+                        'jenis_dokumen' => 'Transkrip sementara',
+                    ]);
+                }
+            }
+
+            // Form 3/F03 Evaluasi Diri Items (Kalkulus Integral)
+            if ($mkKalkulusInt) {
+                $f03IntItems = [
+                    'Mampu menganalisis berbagai bentuk anti turunan dari fungsi integran fungsi aljabar secara mandiri.',
+                    'Mampu menyelesaikan permasalahan yang berkaitan dengan notasi sigma berdasarkan sifat-sifatnya secara manual dan menggunakan software geogebra.',
+                    'Mampu menganalisis perbedaan luas polygon dalam dan polygon luar untuk mendekati luas daerah dibawah kurva dengan batas tertentu secara manual dan software geogebra.',
+                    'Mampu menganalisis jumlah Riemann untuk mendefinisikan definisi integral tentu dan sifat-sifatnya.',
+                    'Mampu menganalisis jumlah Riemann untuk mendefinisikan definisi integral tentu dan sifat-sifatnya.',
+                    'Mampu menggunakan aplikasi integral dalam menyelesaikan permasalahan luas daerah bidang datar untuk berbagai bentuk daerah.',
+                    'Trampil dalam mengaplikasikan integral untuk volume dengan menggunakan metode yang tepat dan sesuai baik secara manual dan geogebra.',
+                    'Trampil dalam menyelesaikan permasalahan berkaitan dengan Aplikasi integral untuk panjang kurva dan luas permukaan.',
+                    'Mampu menyelesaikan permasalahan turunan dan integral untuk Fungsi transenden logaritma dan eksponen secara manual dan atau menggunakan geogebra.',
+                    'Mampu menyelesaikan permasalahan turunan dan integral untuk Fungsi transenden logaritma dan eksponen secara manual dan atau menggunakan geogebra.',
+                    'Trampil memilih secara tepat Teknik pengintegralan substitusi dan merasionalkan sesuai dengan karakteristik fungsi integrannya.',
+                    'Trampil memilih secara tepat Teknik Pengintegralan parsial dan fungsi rasional sesuai dengan karakteristik fungsi integrannya.',
+                ];
+
+                foreach ($f03IntItems as $idx => $pernyataan) {
+                    \App\Models\RplEvaluasiDiriCpmk::create([
+                        'id' => (string) Str::uuid(),
+                        'pendaftar_id' => $pendaftarToheri->id,
+                        'mata_kuliah_id' => $mkKalkulusInt->id,
+                        'nomor_urut' => $idx + 1,
+                        'pernyataan_cpmk' => $pernyataan,
+                        'profisiensi' => ($idx === 4) ? 'baik' : 'sangat_baik',
+                        'is_valid' => true,
+                        'is_autentik' => true,
+                        'is_terkini' => true,
+                        'is_memadai' => true,
+                        'nomor_dokumen' => ($idx % 2 === 0) ? 'Dok. 1' : 'Dok. 2',
+                        'jenis_dokumen' => ($idx % 2 === 0) ? 'Menjadi tutor MK Kalkulus Integral' : 'Menjadi asisten praktikum MK Kalkulus Integral',
+                    ]);
+                }
+            }
+        }
     }
 }
