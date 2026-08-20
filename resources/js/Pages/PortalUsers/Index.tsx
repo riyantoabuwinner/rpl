@@ -303,14 +303,14 @@ export default function PortalUsersIndex({
                     
                     <div className="space-y-2 relative z-10 max-w-2xl">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold border border-amber-400/30">
-                            <DownloadCloud className="w-3.5 h-3.5" />
-                            <span>Sinkronisasi Massal & Penugasan Peran</span>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Integrasi API Portal Akademik</span>
                         </div>
                         <h2 className="text-2xl font-black tracking-tight text-white">
-                            Sinkronisasi Akun Portal & Penetapan Peran
+                            Sinkronisasi Pengguna Portal & Penetapan Peran
                         </h2>
                         <p className="text-xs sm:text-sm text-emerald-100/80 leading-relaxed">
-                            Seluruh akun dosen dari Portal API ditarik terlebih dahulu ke database lokal dengan <strong>peran awal kosong</strong>. Admin/Superadmin kemudian dapat memilih akun dosen tertentu dan menetapkannya sebagai <strong>Asesor Evaluator</strong>.
+                            Data akun Dosen/Pengguna disinkronkan langsung dari Portal API (<strong>POST /api/v2/portal/login</strong>). Admin/Superadmin dapat menarik data akun portal dengan status awal <strong>Belum Diberi Peran</strong>, lalu menetapkannya sebagai <strong>Asesor Evaluator RPL</strong>.
                         </p>
                     </div>
 
@@ -327,11 +327,11 @@ export default function PortalUsersIndex({
                         <Button
                             variant="primary"
                             size="md"
-                            onClick={() => setIsBulkSyncModalOpen(true)}
-                            className="bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-black shadow-lg shadow-amber-950/30 border-0 py-2.5"
+                            onClick={() => handleOpenSyncModal('unassigned')}
+                            className="bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-700 text-slate-950 font-black shadow-lg shadow-emerald-950/30 border-0 py-2.5"
                         >
-                            <DownloadCloud className="w-4 h-4 mr-1.5" />
-                            Tarik Semua Akun Portal
+                            <UserPlus className="w-4 h-4 mr-1.5" />
+                            + Tarik & Sinkronkan Akun Portal
                         </Button>
                     </div>
                 </div>
@@ -799,56 +799,68 @@ export default function PortalUsersIndex({
                 )}
             </div>
 
-            {/* MODAL 1: SINKRONKAN SEMUA AKUN DARI PORTAL (BULK SYNC) */}
+            {/* MODAL 1: SINKRONKAN AKUN DARI PORTAL (OFFICIAL API) */}
             <Modal
-                isOpen={isBulkSyncModalOpen}
-                onClose={() => setIsBulkSyncModalOpen(false)}
-                title="Tarik Seluruh Akun dari Portal API (Latar Belakang)"
+                isOpen={isSyncModalOpen}
+                onClose={() => setIsSyncModalOpen(false)}
+                title="Tarik & Sinkronkan Akun dari Portal API"
                 size="md"
             >
-                <form onSubmit={handleBulkSyncSubmit} className="space-y-4">
-                    <div className="p-3.5 bg-gradient-to-br from-amber-50 to-emerald-50 rounded-2xl border border-amber-200 text-xs text-amber-950 space-y-1.5">
-                        <div className="font-bold flex items-center gap-1.5 text-amber-900">
-                            <DownloadCloud className="w-4 h-4 text-amber-600" />
-                            <span>Impor Massal Akun Portal (Peran Awal Kosong)</span>
+                <form onSubmit={handleSyncSingleSubmit} className="space-y-4">
+                    <div className="p-3.5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200 text-xs text-emerald-950 space-y-1.5">
+                        <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                            <Sparkles className="w-4 h-4 text-emerald-600" />
+                            <span>Integrasi Resmi Portal API (POST /api/v2/portal/login)</span>
                         </div>
                         <p className="text-slate-600 leading-relaxed">
-                            Sistem akan menarik seluruh data akun dosen dari Portal API. Akun-akun ini akan masuk ke database dengan <strong>peran kosong (belum diset)</strong> agar Anda dapat memilih dan menetapkan siapa yang bertugas sebagai <strong>Asesor</strong>.
+                            Masukkan Username/NIP dan Password Portal untuk menarik profil pengguna asli dari server Portal API ke database lokal SIRPL.
                         </p>
                     </div>
 
-                    <div className="p-3 bg-indigo-50/80 rounded-xl border border-indigo-200 text-xs text-indigo-900 flex items-start gap-2.5">
-                        <Zap className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
-                        <div>
-                            <span className="font-bold block">⚡ Berjalan Otomatis di Latar Belakang:</span>
-                            <span className="text-slate-600">
-                                Proses penarikan data diproses di latar belakang (*Asynchronous Background Job*). Browser tidak akan *freeze* dan Anda dapat langsung melanjutkan pekerjaan lain.
-                            </span>
-                        </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Username / NIP Portal:
+                        </label>
+                        <Input
+                            type="text"
+                            value={syncForm.data.username}
+                            onChange={(e) => syncForm.setData('username', e.target.value)}
+                            placeholder="Contoh: adminportal_iain atau NIP Dosen"
+                            required
+                            className="font-mono text-xs"
+                        />
                     </div>
 
                     <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Kategori Akun yang Ditarik:
+                            Password Portal:
+                        </label>
+                        <Input
+                            type="password"
+                            value={syncForm.data.password}
+                            onChange={(e) => syncForm.setData('password', e.target.value)}
+                            placeholder="Masukkan password akun portal..."
+                            required
+                            className="text-xs"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Peran Awal di Sistem SIRPL:
                         </label>
                         <select
-                            value={bulkSyncForm.data.type}
-                            onChange={(e) => bulkSyncForm.setData('type', e.target.value)}
+                            value={syncForm.data.target_role}
+                            onChange={(e) => syncForm.setData('target_role', e.target.value)}
                             className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-800"
                         >
-                            <option value="all">Semua Akun Dosen & Pengguna Portal</option>
-                            <option value="dosen">Hanya Akun Dosen Tetap / Pengajar</option>
+                            <option value="unassigned">⚠️ Kosongkan Peran (Akan Ditetapkan Asesor Nanti)</option>
+                            <option value="asesor">🎓 Asesor Evaluator (Langsung Jadikan Asesor)</option>
+                            <option value="admin_rpl">🛡️ Admin Pusat RPL</option>
+                            <option value="kaprodi">👔 Ketua Program Studi (Kaprodi)</option>
+                            <option value="lpm">🔍 Lembaga Penjaminan Mutu (LPM)</option>
+                            <option value="admin_siakad">💻 Administrator SIAKAD & Feeder</option>
                         </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Status Peran Awal:
-                        </label>
-                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-medium flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-amber-500" />
-                            <span><strong>Kosong / Belum Ditetapkan</strong> (Role akan diset kemudian oleh Admin)</span>
-                        </div>
                     </div>
 
                     <div className="pt-2 flex justify-end gap-2">
@@ -856,7 +868,7 @@ export default function PortalUsersIndex({
                             type="button"
                             variant="secondary"
                             size="sm"
-                            onClick={() => setIsBulkSyncModalOpen(false)}
+                            onClick={() => setIsSyncModalOpen(false)}
                         >
                             Batal
                         </Button>
@@ -864,11 +876,11 @@ export default function PortalUsersIndex({
                             type="submit"
                             variant="primary"
                             size="sm"
-                            isLoading={bulkSyncForm.processing}
-                            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black"
+                            isLoading={syncForm.processing}
+                            className="bg-[#125c50] hover:bg-[#187566] text-white font-bold"
                         >
-                            <Zap className="w-3.5 h-3.5 mr-1.5" />
-                            Mulai di Latar Belakang
+                            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                            Koneksikan & Sinkronkan
                         </Button>
                     </div>
                 </form>

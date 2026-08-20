@@ -116,29 +116,32 @@ class PortalUserController extends Controller
     }
 
     /**
-     * Synchronize a specific user account from Portal API with selectable role
+     * Synchronize a specific user account from Portal API via official POST /api/v2/portal/login
      */
     public function syncSingle(Request $request): RedirectResponse
     {
         $request->validate([
             'username' => 'required|string|max:100',
             'password' => 'required|string',
-            'target_role' => 'nullable|string|in:super_admin,admin_rpl,asesi,asesor,kaprodi,lpm,admin_siakad',
+            'target_role' => 'nullable|string',
         ]);
 
         $username = trim($request->input('username'));
         $password = (string) $request->input('password');
-        $targetRoleStr = $request->input('target_role', 'asesor');
-        $overrideRole = \App\Enums\UserRole::tryFrom($targetRoleStr) ?? \App\Enums\UserRole::ASESOR;
+        $targetRoleStr = $request->input('target_role');
+        $overrideRole = (!empty($targetRoleStr) && $targetRoleStr !== 'unassigned' && $targetRoleStr !== 'none')
+            ? \App\Enums\UserRole::tryFrom($targetRoleStr)
+            : null;
 
         $result = $this->portalAuthService->authenticate($username, $password, $overrideRole);
 
         if ($result['success'] && $result['user']) {
             $user = $result['user'];
-            return back()->with('success', "Akun Dosen/Pengguna [{$username}] berhasil divalidasi dan disinkronkan ke database lokal sebagai [{$user->role?->label()}].");
+            $roleLabel = $user->role ? $user->role->label() : 'Belum Diberi Role (Siap Dijadikan Asesor)';
+            return back()->with('success', "✓ Akun [{$username}] ({$user->name}) berhasil divalidasi dan disinkronkan dari Portal API. Status Peran: {$roleLabel}.");
         }
 
-        return back()->with('error', 'Gagal sinkronisasi: ' . ($result['message'] ?? 'Kredensial portal tidak valid atau server tidak merespons.'));
+        return back()->with('error', 'Gagal sinkronisasi dari Portal API: ' . ($result['message'] ?? 'Kredensial portal tidak valid atau server portal tidak merespons.'));
     }
 
     /**
