@@ -751,11 +751,11 @@ export default function PortalUsersIndex({
             <Modal
                 isOpen={isBulkSyncModalOpen}
                 onClose={() => setIsBulkSyncModalOpen(false)}
-                title="Tarik Seluruh Akun dari Portal API"
+                title="Tarik Seluruh Akun dari Portal API (Latar Belakang)"
                 size="md"
             >
                 <form onSubmit={handleBulkSyncSubmit} className="space-y-4">
-                    <div className="p-3.5 bg-gradient-to-br from-amber-50 to-emerald-50 rounded-2xl border border-amber-200 text-xs text-amber-950 space-y-1">
+                    <div className="p-3.5 bg-gradient-to-br from-amber-50 to-emerald-50 rounded-2xl border border-amber-200 text-xs text-amber-950 space-y-1.5">
                         <div className="font-bold flex items-center gap-1.5 text-amber-900">
                             <DownloadCloud className="w-4 h-4 text-amber-600" />
                             <span>Impor Massal Akun Portal (Peran Awal Kosong)</span>
@@ -763,6 +763,16 @@ export default function PortalUsersIndex({
                         <p className="text-slate-600 leading-relaxed">
                             Sistem akan menarik seluruh data akun dosen dari Portal API. Akun-akun ini akan masuk ke database dengan <strong>peran kosong (belum diset)</strong> agar Anda dapat memilih dan menetapkan siapa yang bertugas sebagai <strong>Asesor</strong>.
                         </p>
+                    </div>
+
+                    <div className="p-3 bg-indigo-50/80 rounded-xl border border-indigo-200 text-xs text-indigo-900 flex items-start gap-2.5">
+                        <Zap className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                        <div>
+                            <span className="font-bold block">⚡ Berjalan Otomatis di Latar Belakang:</span>
+                            <span className="text-slate-600">
+                                Proses penarikan data diproses di latar belakang (*Asynchronous Background Job*). Browser tidak akan *freeze* dan Anda dapat langsung melanjutkan pekerjaan lain.
+                            </span>
+                        </div>
                     </div>
 
                     <div>
@@ -805,8 +815,8 @@ export default function PortalUsersIndex({
                             isLoading={bulkSyncForm.processing}
                             className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black"
                         >
-                            <DownloadCloud className="w-3.5 h-3.5 mr-1.5" />
-                            Tarik Semua Akun
+                            <Zap className="w-3.5 h-3.5 mr-1.5" />
+                            Mulai di Latar Belakang
                         </Button>
                     </div>
                 </form>

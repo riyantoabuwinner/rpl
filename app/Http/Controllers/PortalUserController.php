@@ -157,21 +157,21 @@ class PortalUserController extends Controller
     }
 
     /**
-     * Synchronize ALL portal user accounts (Dosen, Pegawai, dll) into local database
+     * Synchronize ALL portal user accounts (Dosen, Pegawai, dll) in background
      */
     public function syncAll(Request $request): RedirectResponse
     {
         $type = $request->input('type', 'all');
         $defaultRoleStr = $request->input('default_role');
-        $defaultRole = $defaultRoleStr ? \App\Enums\UserRole::tryFrom($defaultRoleStr) : null;
 
-        $result = $this->portalAuthService->syncAllUsersFromPortal($type, $defaultRole);
+        // Dispatch background job that runs asynchronously without blocking user UI
+        \App\Jobs\SyncPortalUsersJob::dispatchAfterResponse(
+            type: $type,
+            defaultRole: $defaultRoleStr,
+            actorId: auth()->id()
+        );
 
-        if ($result['success']) {
-            return back()->with('success', $result['message']);
-        }
-
-        return back()->with('error', $result['message']);
+        return back()->with('success', 'Sinkronisasi seluruh data akun Portal sedang diproses di latar belakang. Anda dapat melanjutkan aktivitas lain sementara sistem menarik data.');
     }
 
     /**
