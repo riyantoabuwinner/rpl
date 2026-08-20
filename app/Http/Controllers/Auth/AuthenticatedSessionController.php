@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Auth;
 use App\Enums\AuditAction;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\User;
+use App\Services\PortalAuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +18,10 @@ use Inertia\Response;
 
 class AuthenticatedSessionController extends Controller
 {
+    public function __construct(
+        protected PortalAuthService $portalAuthService
+    ) {}
+
     /**
      * Display the login view.
      */
@@ -28,16 +34,21 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request.
+     * Handle an incoming authentication request with Portal API and local fallback.
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+        // Support login identifier from field 'email', 'username', or 'login'
+        $loginIdentifier = trim((string) ($request->input('email') ?? $request->input('username') ?? $request->input('login')));
+        $password = (string) $request->input('password');
 
-        $throttleKey = Str::transliterate(Str::lower($request->input('email')) . '|' . $request->ip());
+        if (empty($loginIdentifier) || empty($password)) {
+            throw ValidationException::withMessages([
+                'email' => 'Username / email dan kata sandi wajib diisi.',
+            ]);
+        }
+
+        $throttleKey = Str::transliterate(Str::lower($loginIdentifier) . '|' . $request->ip());
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
@@ -46,11 +57,42 @@ class AuthenticatedSessionController extends Controller
             ]);
         }
 
-        if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        $authenticatedUser = null;
+
+        // 1. Primary Authentication: Portal API Integration
+        $portalResult = $this->portalAuthService->authenticate($loginIdentifier, $password);
+        if ($portalResult['success'] && $portalResult['user']) {
+            $authenticatedUser = $portalResult['user'];
+            Auth::login($authenticatedUser, $request->boolean('remember'));
+        }
+
+        // 2. Secondary / Local Fallback Authentication (e.g. Local Seeders, Super Admin, Offline Dev)
+        if (!$authenticatedUser) {
+            $isEmail = filter_var($loginIdentifier, FILTER_VALIDATE_EMAIL);
+            $credentials = $isEmail
+                ? ['email' => $loginIdentifier, 'password' => $password]
+                : ['username' => $loginIdentifier, 'password' => $password];
+
+            if (Auth::attempt($credentials, $request->boolean('remember'))) {
+                $authenticatedUser = Auth::user();
+            } elseif (!$isEmail) {
+                // If provided as non-email username, also try checking if user exists by email with that prefix
+                $userByUsername = User::where('username', $loginIdentifier)->first();
+                if ($userByUsername && Auth::attempt(['email' => $userByUsername->email, 'password' => $password], $request->boolean('remember'))) {
+                    $authenticatedUser = Auth::user();
+                }
+            }
+        }
+
+        if (!$authenticatedUser) {
             RateLimiter::hit($throttleKey);
 
+            $errorMessage = !empty($portalResult['message']) && $portalResult['message'] !== 'Login Portal gagal.'
+                ? $portalResult['message']
+                : 'Kredensial yang diberikan tidak cocok dengan data Portal / Sistem SIRPL.';
+
             throw ValidationException::withMessages([
-                'email' => 'Kredensial yang diberikan tidak cocok dengan data kami.',
+                'email' => $errorMessage,
             ]);
         }
 
@@ -63,7 +105,7 @@ class AuthenticatedSessionController extends Controller
             action: AuditAction::LOGIN,
             entityType: 'User',
             entityId: (string) $user->id,
-            newValues: ['email' => $user->email, 'role' => $user->role?->value ?? (string) $user->role]
+            newValues: ['email' => $user->email, 'username' => $user->username, 'role' => $user->role?->value ?? (string) $user->role]
         );
 
         return redirect()->intended(route('dashboard'));
@@ -90,3 +132,4 @@ class AuthenticatedSessionController extends Controller
         return redirect('/');
     }
 }
+

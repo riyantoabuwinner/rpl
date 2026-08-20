@@ -16,6 +16,7 @@ class UserSeeder extends Seeder
         $users = [
             [
                 'name' => 'Super Administrator',
+                'username' => 'superadmin',
                 'email' => 'superadmin@kampus.ac.id',
                 'nik' => '3271010101900001',
                 'phone' => '081234567890',
@@ -25,6 +26,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Pengelola Pusat RPL',
+                'username' => 'adminrpl',
                 'email' => 'adminrpl@kampus.ac.id',
                 'nik' => '3271010202880002',
                 'phone' => '081234567891',
@@ -34,6 +36,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Dr. Ahmad Dahlan, M.Kom.',
+                'username' => 'asesor1',
                 'email' => 'asesor1@kampus.ac.id',
                 'nik' => '3271010303850003',
                 'phone' => '081234567892',
@@ -43,6 +46,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Dr. Siti Aminah, M.T.',
+                'username' => 'asesor2',
                 'email' => 'asesor2@kampus.ac.id',
                 'nik' => '3271010404870004',
                 'phone' => '081234567893',
@@ -52,6 +56,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Prof. Dr. Ir. Bambang Hermanto',
+                'username' => 'kaprodi.ti',
                 'email' => 'kaprodi.ti@kampus.ac.id',
                 'nik' => '3271010505800005',
                 'phone' => '081234567894',
@@ -61,6 +66,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Dr. Hendra Wijaya, M.Pd. (LPM)',
+                'username' => 'lpm',
                 'email' => 'lpm@kampus.ac.id',
                 'nik' => '3271010606820006',
                 'phone' => '081234567895',
@@ -70,6 +76,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Admin Data SIAKAD & Feeder',
+                'username' => 'siakad',
                 'email' => 'siakad@kampus.ac.id',
                 'nik' => '3271010707920007',
                 'phone' => '081234567896',
@@ -79,6 +86,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Ahmad Fauzi (Calon Asesi RPL A2)',
+                'username' => 'asesi.ahmad',
                 'email' => 'asesi.ahmad@example.com',
                 'nik' => '3271011508980008',
                 'phone' => '085712345678',
@@ -88,6 +96,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Rina Wulandari (Calon Asesi RPL A1)',
+                'username' => 'asesi.rina',
                 'email' => 'asesi.rina@example.com',
                 'nik' => '3271012509990009',
                 'phone' => '085787654321',
@@ -97,6 +106,7 @@ class UserSeeder extends Seeder
             ],
             [
                 'name' => 'Toheri (Calon Asesi Tadris Matematika)',
+                'username' => 'toheri',
                 'email' => 'toheri@uinssc.ac.id',
                 'nik' => '3213011607730001',
                 'phone' => '081320741803',

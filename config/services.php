@@ -43,6 +43,13 @@ return [
         'retry_sleep' => (int) env('SIAKAD_RETRY_SLEEP_MS', 500),
     ],
 
+    'portal' => [
+        'base_url' => env('PORTAL_BASE_URL', 'http://localhost:8000/api/v2/portal'),
+        'login_endpoint' => env('PORTAL_LOGIN_ENDPOINT', '/login'),
+        'timeout' => (int) env('PORTAL_TIMEOUT', 15),
+        'retry_times' => (int) env('PORTAL_RETRY_TIMES', 1),
+    ],
+
     'pddikti' => [
         'base_url' => env('PDDIKTI_BASE_URL', 'https://feeder.kemdikbud.go.id/ws/live.php'),
         'username' => env('PDDIKTI_USERNAME'),

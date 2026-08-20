@@ -44,8 +44,8 @@ export default function UnifiedAuth({
 
     // 1. Login Form
     const loginForm = useForm({
-        email: 'adminrpl@kampus.ac.id',
-        password: 'password123',
+        email: 'adminportal_iain',
+        password: '123',
         remember: true,
     });
 
@@ -71,22 +71,23 @@ export default function UnifiedAuth({
 
     // Quick demo login profiles
     const demoAccounts = [
-        { role: 'Admin Pusat RPL', email: 'adminrpl@kampus.ac.id', name: 'Pengelola RPL', color: 'blue' },
-        { role: 'Asesor 1 (Dr. Ahmad)', email: 'asesor1@kampus.ac.id', name: 'Dosen Evaluator', color: 'indigo' },
-        { role: 'Asesi (Toheri - TMT)', email: 'toheri@uinssc.ac.id', name: 'Asesi Tadris MTK', color: 'emerald' },
-        { role: 'Asesi (Ahmad - TI)', email: 'asesi.ahmad@example.com', name: 'Asesi RPL A2', color: 'teal' },
-        { role: 'Kaprodi (Prof. Bambang)', email: 'kaprodi.ti@kampus.ac.id', name: 'Ketua Prodi', color: 'purple' },
-        { role: 'Penjaminan Mutu (LPM)', email: 'lpm@kampus.ac.id', name: 'Auditor Mutu', color: 'amber' },
-        { role: 'Admin SIAKAD', email: 'siakad@kampus.ac.id', name: 'Biro Akademik', color: 'sky' },
-        { role: 'Super Administrator', email: 'superadmin@kampus.ac.id', name: 'Super Admin', color: 'slate' },
+        { role: 'Admin Portal (API)', email: 'adminportal_iain', name: 'Akun SSO Portal', color: 'emerald', defaultPass: '123' },
+        { role: 'Admin Pusat RPL', email: 'adminrpl@kampus.ac.id', name: 'Pengelola RPL', color: 'blue', defaultPass: 'password123' },
+        { role: 'Asesor 1 (Dr. Ahmad)', email: 'asesor1@kampus.ac.id', name: 'Dosen Evaluator', color: 'indigo', defaultPass: 'password123' },
+        { role: 'Asesi (Toheri - TMT)', email: 'toheri@uinssc.ac.id', name: 'Asesi Tadris MTK', color: 'emerald', defaultPass: 'password123' },
+        { role: 'Asesi (Ahmad - TI)', email: 'asesi.ahmad@example.com', name: 'Asesi RPL A2', color: 'teal', defaultPass: 'password123' },
+        { role: 'Kaprodi (Prof. Bambang)', email: 'kaprodi.ti@kampus.ac.id', name: 'Ketua Prodi', color: 'purple', defaultPass: 'password123' },
+        { role: 'Penjaminan Mutu (LPM)', email: 'lpm@kampus.ac.id', name: 'Auditor Mutu', color: 'amber', defaultPass: 'password123' },
+        { role: 'Admin SIAKAD', email: 'siakad@kampus.ac.id', name: 'Biro Akademik', color: 'sky', defaultPass: 'password123' },
+        { role: 'Super Administrator', email: 'superadmin@kampus.ac.id', name: 'Super Admin', color: 'slate', defaultPass: 'password123' },
     ];
 
-    const pickAccount = (email: string) => {
+    const pickAccount = (email: string, pass: string = 'password123') => {
         setTab('login');
         loginForm.setData({
             ...loginForm.data,
             email,
-            password: 'password123',
+            password: pass,
         });
     };
 
@@ -155,23 +156,23 @@ export default function UnifiedAuth({
                             <div className="space-y-1">
                                 <h3 className="text-base font-bold text-slate-900">Masuk ke Portal SIRPL</h3>
                                 <p className="text-xs text-slate-500">
-                                    Silakan masukkan email dan kata sandi yang telah terdaftar
+                                    Silakan masukkan username Portal atau email dan kata sandi Anda
                                 </p>
                             </div>
 
                             <form onSubmit={handleLoginSubmit} className="space-y-4">
                                 <div>
                                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                                        Alamat Email <span className="text-red-500">*</span>
+                                        Username Portal / Email <span className="text-red-500">*</span>
                                     </label>
                                     <div className="relative">
                                         <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                                         <input
-                                            type="email"
+                                            type="text"
                                             required
                                             value={loginForm.data.email}
                                             onChange={(e) => loginForm.setData('email', e.target.value)}
-                                            placeholder="nama@kampus.ac.id"
+                                            placeholder="Contoh: adminportal_iain atau nama@kampus.ac.id"
                                             className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 font-medium"
                                         />
                                     </div>
@@ -245,7 +246,7 @@ export default function UnifiedAuth({
                                         <button
                                             key={acc.email}
                                             type="button"
-                                            onClick={() => pickAccount(acc.email)}
+                                            onClick={() => pickAccount(acc.email, acc.defaultPass)}
                                             className="p-2 rounded-xl text-left border border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/50 transition-all text-xs group"
                                         >
                                             <div className="font-bold text-slate-800 group-hover:text-emerald-800 text-[11px] truncate">

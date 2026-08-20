@@ -18,11 +18,14 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'username',
         'email',
         'nik',
         'phone',
         'role',
         'avatar_path',
+        'portal_id',
+        'portal_data',
         'is_active',
         'password',
         'two_factor_secret',
@@ -44,6 +47,7 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'portal_data' => 'array',
             'role' => UserRole::class,
         ];
     }
