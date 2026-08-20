@@ -60,12 +60,11 @@ class PortalClient
     public function testConnection(): array
     {
         $endpoint = $this->baseUrl . $this->loginEndpoint;
-        $requestId = (string) Str::uuid();
 
         try {
             $startTime = microtime(true);
             $response = Http::acceptJson()
-                ->timeout(5)
+                ->timeout(3)
                 ->get($this->baseUrl);
 
             $durationMs = round((microtime(true) - $startTime) * 1000, 2);
@@ -78,12 +77,21 @@ class PortalClient
                 'message' => 'Portal API server dapat dijangkau.',
             ];
         } catch (\Throwable $e) {
+            $errorMsg = $e->getMessage();
+            if (str_contains($errorMsg, 'cURL error 28') || str_contains($errorMsg, 'timed out')) {
+                $userMsg = "Timeout (Waktu habis): Server Portal di [{$endpoint}] tidak merespons dalam 3 detik. Pastikan server Portal API sedang aktif atau sesuaikan PORTAL_BASE_URL di file .env.";
+            } elseif (str_contains($errorMsg, 'cURL error 7') || str_contains($errorMsg, 'Connection refused')) {
+                $userMsg = "Koneksi Ditolak: Tidak ada service yang aktif di [{$endpoint}]. Pastikan server Portal sudah dihidupkan.";
+            } else {
+                $userMsg = "Gagal terhubung: " . $errorMsg;
+            }
+
             return [
                 'online' => false,
                 'status_code' => 500,
                 'duration_ms' => 0,
                 'endpoint' => $endpoint,
-                'message' => 'Tidak dapat terhubung ke Portal API: ' . $e->getMessage(),
+                'message' => $userMsg,
             ];
         }
     }
@@ -186,10 +194,19 @@ class PortalClient
                 'url' => $url,
             ]);
 
+            $errorMsg = $e->getMessage();
+            if (str_contains($errorMsg, 'cURL error 28') || str_contains($errorMsg, 'timed out')) {
+                $userMsg = "Waktu koneksi ke Portal API habis (Timeout). Server Portal di [{$url}] tidak merespons.";
+            } elseif (str_contains($errorMsg, 'cURL error 7') || str_contains($errorMsg, 'Connection refused')) {
+                $userMsg = "Koneksi ke Portal API ditolak. Server Portal di [{$url}] sedang offline.";
+            } else {
+                $userMsg = "Gagal menghubungi server Portal: " . $errorMsg;
+            }
+
             return [
                 'success' => false,
                 'status_code' => 500,
-                'message' => 'Gagal menghubungi server Portal: ' . $e->getMessage(),
+                'message' => $userMsg,
                 'data' => null,
                 'request_id' => $requestId,
             ];
