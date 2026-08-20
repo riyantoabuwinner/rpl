@@ -28,6 +28,7 @@ import {
     Search,
     UserCheck,
     Layers,
+    RefreshCw,
 } from 'lucide-react';
 import { Badge } from '@/Components/UI/Badge';
 import { Button } from '@/Components/UI/Button';
@@ -96,6 +97,13 @@ export const AppLayout: React.FC<{
             icon: Users,
             active: currentUrl.startsWith('/admin/pendaftar'),
             roles: ['super_admin', 'admin_rpl', 'kaprodi', 'lpm'],
+        },
+        {
+            label: 'Sinkron User Portal',
+            href: '/admin/portal-users',
+            icon: RefreshCw,
+            active: currentUrl.startsWith('/admin/portal-users'),
+            roles: ['super_admin', 'admin_rpl'],
         },
         {
             label: 'Portofolio Peserta',

@@ -49,6 +49,45 @@ class PortalClient
         );
     }
 
+    public function getBaseUrl(): string
+    {
+        return $this->baseUrl . $this->loginEndpoint;
+    }
+
+    /**
+     * Test connection to Portal API server
+     */
+    public function testConnection(): array
+    {
+        $endpoint = $this->baseUrl . $this->loginEndpoint;
+        $requestId = (string) Str::uuid();
+
+        try {
+            $startTime = microtime(true);
+            $response = Http::acceptJson()
+                ->timeout(5)
+                ->get($this->baseUrl);
+
+            $durationMs = round((microtime(true) - $startTime) * 1000, 2);
+
+            return [
+                'online' => $response->status() < 500,
+                'status_code' => $response->status(),
+                'duration_ms' => $durationMs,
+                'endpoint' => $endpoint,
+                'message' => 'Portal API server dapat dijangkau.',
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'online' => false,
+                'status_code' => 500,
+                'duration_ms' => 0,
+                'endpoint' => $endpoint,
+                'message' => 'Tidak dapat terhubung ke Portal API: ' . $e->getMessage(),
+            ];
+        }
+    }
+
     /**
      * Centralized HTTP Request dispatcher for Portal API
      */

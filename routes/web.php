@@ -127,4 +127,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/sanggah', [\App\Http\Controllers\SanggahController::class, 'index'])->name('sanggah.index');
     Route::post('/sanggah', [\App\Http\Controllers\SanggahController::class, 'store'])->name('sanggah.store');
     Route::post('/sanggah/{id}/review', [\App\Http\Controllers\SanggahController::class, 'review'])->name('sanggah.review');
+
+    // 11. Integrasi & Sinkronisasi User Portal
+    Route::prefix('admin/portal-users')->name('admin.portal-users.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\PortalUserController::class, 'index'])->name('index');
+        Route::post('/sync-single', [\App\Http\Controllers\PortalUserController::class, 'syncSingle'])->name('sync-single');
+        Route::post('/test-connection', [\App\Http\Controllers\PortalUserController::class, 'testConnection'])->name('test-connection');
+    });
 });
+

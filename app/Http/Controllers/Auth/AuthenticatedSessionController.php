@@ -34,7 +34,7 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Handle an incoming authentication request with Portal API and local fallback.
+     * Handle an incoming authentication request with Local-First caching and On-Demand Portal API fallback.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -58,29 +58,27 @@ class AuthenticatedSessionController extends Controller
         }
 
         $authenticatedUser = null;
+        $authSource = 'local_db';
 
-        // 1. Primary Authentication: Portal API Integration
-        $portalResult = $this->portalAuthService->authenticate($loginIdentifier, $password);
-        if ($portalResult['success'] && $portalResult['user']) {
-            $authenticatedUser = $portalResult['user'];
+        // 1. PRIORITAS UTAMA: Cek kredensial di Database Lokal terlebih dahulu (Hemat resource & tanpa selalu hit API Portal)
+        $localUser = User::where('username', $loginIdentifier)
+            ->orWhere('email', $loginIdentifier)
+            ->first();
+
+        if ($localUser && Hash::check($password, $localUser->password)) {
+            // Pengguna cocok di database lokal -> Langsung login tanpa panggil API Portal
+            $authenticatedUser = $localUser;
+            $authSource = 'local_db';
             Auth::login($authenticatedUser, $request->boolean('remember'));
         }
 
-        // 2. Secondary / Local Fallback Authentication (e.g. Local Seeders, Super Admin, Offline Dev)
+        // 2. JIKA DI DATABASE LOKAL TIDAK COCOK / BELUM ADA / BERUBAH: Panggil API Portal & sinkronkan ulang ke database lokal
         if (!$authenticatedUser) {
-            $isEmail = filter_var($loginIdentifier, FILTER_VALIDATE_EMAIL);
-            $credentials = $isEmail
-                ? ['email' => $loginIdentifier, 'password' => $password]
-                : ['username' => $loginIdentifier, 'password' => $password];
-
-            if (Auth::attempt($credentials, $request->boolean('remember'))) {
-                $authenticatedUser = Auth::user();
-            } elseif (!$isEmail) {
-                // If provided as non-email username, also try checking if user exists by email with that prefix
-                $userByUsername = User::where('username', $loginIdentifier)->first();
-                if ($userByUsername && Auth::attempt(['email' => $userByUsername->email, 'password' => $password], $request->boolean('remember'))) {
-                    $authenticatedUser = Auth::user();
-                }
+            $portalResult = $this->portalAuthService->authenticate($loginIdentifier, $password);
+            if ($portalResult['success'] && $portalResult['user']) {
+                $authenticatedUser = $portalResult['user'];
+                $authSource = 'portal_api_sync';
+                Auth::login($authenticatedUser, $request->boolean('remember'));
             }
         }
 
@@ -89,7 +87,7 @@ class AuthenticatedSessionController extends Controller
 
             $errorMessage = !empty($portalResult['message']) && $portalResult['message'] !== 'Login Portal gagal.'
                 ? $portalResult['message']
-                : 'Kredensial yang diberikan tidak cocok dengan data Portal / Sistem SIRPL.';
+                : 'Kredensial yang diberikan tidak cocok dengan data Portal maupun Database Lokal SIRPL.';
 
             throw ValidationException::withMessages([
                 'email' => $errorMessage,
@@ -105,7 +103,12 @@ class AuthenticatedSessionController extends Controller
             action: AuditAction::LOGIN,
             entityType: 'User',
             entityId: (string) $user->id,
-            newValues: ['email' => $user->email, 'username' => $user->username, 'role' => $user->role?->value ?? (string) $user->role]
+            newValues: [
+                'auth_source' => $authSource,
+                'email' => $user->email,
+                'username' => $user->username,
+                'role' => $user->role?->value ?? (string) $user->role,
+            ]
         );
 
         return redirect()->intended(route('dashboard'));

@@ -26,6 +26,7 @@ class User extends Authenticatable
         'avatar_path',
         'portal_id',
         'portal_data',
+        'portal_synced_at',
         'is_active',
         'password',
         'two_factor_secret',
@@ -45,6 +46,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
+            'portal_synced_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
             'portal_data' => 'array',

@@ -153,6 +153,14 @@ class PortalAuthService
     }
 
     /**
+     * Test connection to Portal API server
+     */
+     public function testConnection(): array
+     {
+         return $this->client->testConnection();
+     }
+
+    /**
      * Synchronize or create the local user record
      */
     protected function syncPortalUser(array $userData, string $password, array $rawPortalPayload): ?User
@@ -171,6 +179,7 @@ class PortalAuthService
                     'role' => $userData['role'],
                     'portal_id' => $userData['portal_id'],
                     'portal_data' => $rawPortalPayload,
+                    'portal_synced_at' => now(),
                     'password' => Hash::make($password),
                     'is_active' => true,
                 ];
