@@ -213,10 +213,9 @@ class PortalAuthService
                     ->when(!empty($nik), fn ($q) => $q->orWhere('nik', $nik))
                     ->first();
 
-                // If user already has an established role locally, preserve it
-                if ($existingUser && $existingUser->role) {
-                    $assignedRole = $existingUser->role;
-                }
+                // If user already has an established role locally, preserve it.
+                // Otherwise leave role as null (unassigned) until assigned by Admin/Superadmin.
+                $assignedRole = $existingUser?->role ?? $defaultRole;
 
                 $attributes = [
                     'name' => $name,

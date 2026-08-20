@@ -28,6 +28,8 @@ import {
     Square,
     DownloadCloud,
     Filter,
+    UserX,
+    HelpCircle,
 } from 'lucide-react';
 import { AppLayout } from '@/Components/Layout/AppLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/Components/UI/Card';
@@ -43,7 +45,7 @@ interface UserItem {
     email: string;
     nik: string | null;
     phone: string | null;
-    role: string;
+    role: string | null;
     role_label: string;
     portal_id: string | null;
     is_portal_synced: boolean;
@@ -76,6 +78,8 @@ interface PageProps {
         synced_portal_count: number;
         local_only_count: number;
         active_users_count: number;
+        unassigned_count: number;
+        asesor_count: number;
         last_synced_at: string | null;
     };
     connection: {
@@ -131,10 +135,10 @@ export default function PortalUsersIndex({
         target_role: 'asesor',
     });
 
-    // Bulk Sync Form
+    // Bulk Sync Form (Default Role: Empty / Unassigned)
     const bulkSyncForm = useForm({
         type: 'all',
-        default_role: 'asesor',
+        default_role: '', // Kosongkan peran awal
     });
 
     // Single Role Update Form
@@ -192,7 +196,7 @@ export default function PortalUsersIndex({
 
     const handleOpenRoleModal = (user: UserItem) => {
         setRoleEditUser(user);
-        roleForm.setData('role', user.role);
+        roleForm.setData('role', user.role || 'asesor');
     };
 
     const handleRoleUpdateSubmit = (e: React.FormEvent) => {
@@ -249,7 +253,7 @@ export default function PortalUsersIndex({
         router.post('/admin/portal-users/test-connection', {}, { preserveScroll: true });
     };
 
-    const getRoleBadgeVariant = (role: string) => {
+    const getRoleBadgeVariant = (role: string | null) => {
         switch (role) {
             case 'super_admin':
                 return 'purple';
@@ -264,24 +268,18 @@ export default function PortalUsersIndex({
             case 'admin_siakad':
                 return 'teal';
             case 'asesi':
-            default:
                 return 'emerald';
+            default:
+                return 'slate';
         }
     };
-
-    // Quick demo Dosen profiles for easy testing
-    const sampleDosenPresets = [
-        { label: 'Dr. Ahmad Konselor, M.Pd.', username: '198503032010011003', role: 'asesor' },
-        { label: 'Dr. Siti Aminah, M.T.', username: '198704042012012004', role: 'asesor' },
-        { label: 'Prof. Dr. Ir. Bambang Hermanto', username: '198005052008011005', role: 'asesor' },
-    ];
 
     const isAllSelected = users.data.length > 0 && selectedUserIds.length === users.data.length;
 
     return (
         <AppLayout
-            title="Sinkronisasi Pengguna Portal & Asesor"
-            subtitle="Tarik seluruh data akun dari Portal API dan tetapkan peran Asesor Evaluator SIRPL"
+            title="Sinkronisasi Pengguna Portal & Penetapan Asesor"
+            subtitle="Tarik seluruh data akun dari Portal API dengan peran kosong, lalu tetapkan peran Asesor Evaluator"
         >
             <div className="space-y-6">
                 {/* 1. Header Banner & Actions */}
@@ -291,13 +289,13 @@ export default function PortalUsersIndex({
                     <div className="space-y-2 relative z-10 max-w-2xl">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold border border-amber-400/30">
                             <DownloadCloud className="w-3.5 h-3.5" />
-                            <span>Sinkronisasi Massal & Penetapan Peran Asesor</span>
+                            <span>Sinkronisasi Massal & Penugasan Peran</span>
                         </div>
                         <h2 className="text-2xl font-black tracking-tight text-white">
-                            Sinkronisasi Seluruh Akun Portal & Asesor
+                            Sinkronisasi Akun Portal & Penetapan Peran
                         </h2>
                         <p className="text-xs sm:text-sm text-emerald-100/80 leading-relaxed">
-                            Admin/Superadmin dapat <strong>menarik seluruh data akun (Dosen & Pegawai) dari Portal API</strong> sekaligus ke database lokal, kemudian memilih akun yang akan diberi peran sebagai <strong>Asesor Evaluator</strong>.
+                            Seluruh akun dosen dari Portal API ditarik terlebih dahulu ke database lokal dengan <strong>peran awal kosong</strong>. Admin/Superadmin kemudian dapat memilih akun dosen tertentu dan menetapkannya sebagai <strong>Asesor Evaluator</strong>.
                         </p>
                     </div>
 
@@ -310,15 +308,6 @@ export default function PortalUsersIndex({
                         >
                             <Server className="w-4 h-4 mr-1.5" />
                             Uji Koneksi API
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            size="md"
-                            onClick={() => handleOpenSyncModal('asesor')}
-                            className="bg-emerald-600/80 hover:bg-emerald-600 text-white border-emerald-400/30 shadow-sm"
-                        >
-                            <UserCheck className="w-4 h-4 mr-1.5" />
-                            Sinkron Satuan
                         </Button>
                         <Button
                             variant="primary"
@@ -334,6 +323,19 @@ export default function PortalUsersIndex({
 
                 {/* 2. Stat Metric Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card className={`border-slate-200/80 shadow-sm hover:shadow transition-shadow ${stats.unassigned_count > 0 ? 'bg-amber-50/50 border-amber-300' : ''}`}>
+                        <CardContent className="p-5 flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold ${stats.unassigned_count > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}`}>
+                                <UserX className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-semibold text-slate-500">Belum Diberi Peran</p>
+                                <h4 className="text-2xl font-black text-amber-950">{stats.unassigned_count}</h4>
+                                <span className="text-[11px] text-amber-700 font-bold">Perlu Ditetapkan Role</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <Card className="border-slate-200/80 shadow-sm hover:shadow transition-shadow">
                         <CardContent className="p-5 flex items-center gap-4">
                             <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
@@ -341,9 +343,7 @@ export default function PortalUsersIndex({
                             </div>
                             <div>
                                 <p className="text-xs font-semibold text-slate-500">Asesor Evaluator Aktif</p>
-                                <h4 className="text-2xl font-black text-indigo-950">
-                                    {users.data.filter((u) => u.role === 'asesor').length}
-                                </h4>
+                                <h4 className="text-2xl font-black text-indigo-950">{stats.asesor_count}</h4>
                                 <span className="text-[11px] text-indigo-600 font-medium">Penilai Portofolio RPL</span>
                             </div>
                         </CardContent>
@@ -371,7 +371,7 @@ export default function PortalUsersIndex({
                                 <p className="text-xs font-semibold text-slate-500">Status Server Portal</p>
                                 <div className="flex items-center gap-2">
                                     <h4 className="text-lg font-black text-slate-900">
-                                        {connection.online ? 'Terhubung' : 'Standby / Error'}
+                                        {connection.online ? 'Terhubung' : 'Standby'}
                                     </h4>
                                 </div>
                                 <span className="text-[11px] text-slate-400">
@@ -380,35 +380,22 @@ export default function PortalUsersIndex({
                             </div>
                         </CardContent>
                     </Card>
-
-                    <Card className="border-slate-200/80 shadow-sm hover:shadow transition-shadow">
-                        <CardContent className="p-5 flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
-                                <Users className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-slate-500">Total Akun Pengguna</p>
-                                <h4 className="text-2xl font-black text-slate-900">{stats.total_users}</h4>
-                                <span className="text-[11px] text-slate-400">{stats.active_users_count} Pengguna Aktif</span>
-                            </div>
-                        </CardContent>
-                    </Card>
                 </div>
 
                 {/* 3. Role Assignment Workflow Guide */}
-                <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-emerald-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div className="flex items-start gap-3">
-                        <div className="p-2.5 rounded-xl bg-emerald-600 text-white mt-0.5 shadow-sm">
-                            <CheckCircle2 className="w-5 h-5" />
+                        <div className="p-2.5 rounded-xl bg-indigo-600 text-white mt-0.5 shadow-sm">
+                            <GraduationCap className="w-5 h-5" />
                         </div>
                         <div className="space-y-0.5 text-xs">
                             <p className="font-bold text-slate-900 flex items-center gap-2">
-                                <span>Alur Kerja Sinkronisasi & Penetapan Asesor:</span>
-                                <Badge variant="emerald" size="sm">Langkah Mudah</Badge>
+                                <span>Alur Pemberian Peran Asesor:</span>
+                                <Badge variant="indigo" size="sm">Admin & Superadmin</Badge>
                             </p>
                             <p className="text-slate-600 leading-relaxed">
-                                <strong>1. Tarik Data:</strong> Klik tombol <em>"Tarik Semua Akun Portal"</em> untuk mengimpor seluruh akun dosen ke database lokal. <br />
-                                <strong>2. Pilih & Beri Peran:</strong> Centang satu atau beberapa dosen pada tabel di bawah, lalu klik <em>"Jadikan Asesor"</em> untuk mengaktifkan mereka sebagai penilai portofolio RPL.
+                                <strong>1. Tarik Data:</strong> Seluruh akun dosen ditarik ke sistem dengan status <em>"Belum Ada Peran"</em>. <br />
+                                <strong>2. Tetapkan Asesor:</strong> Centang dosen yang ditugaskan sebagai penilai portofolio, lalu klik <strong>"Tetapkan Sebagai Asesor RPL"</strong>.
                             </p>
                         </div>
                     </div>
@@ -429,7 +416,7 @@ export default function PortalUsersIndex({
                                     {selectedUserIds.length} Akun Pengguna Terpilih
                                 </span>
                                 <span className="text-[11px] text-indigo-200">
-                                    Siap untuk ditetapkan perannya secara massal
+                                    Siap untuk diberi peran Asesor atau peran lainnya
                                 </span>
                             </div>
                         </div>
@@ -481,12 +468,12 @@ export default function PortalUsersIndex({
                         <span className="text-xs font-semibold text-slate-500">Filter Peran:</span>
                         {[
                             { key: '', label: 'Semua' },
+                            { key: 'unassigned', label: `⚠️ BELUM DISET (${stats.unassigned_count})` },
                             { key: 'asesor', label: '🎓 ASESOR' },
                             { key: 'admin_rpl', label: 'ADMIN RPL' },
                             { key: 'super_admin', label: 'SUPER ADMIN' },
                             { key: 'kaprodi', label: 'KAPRODI' },
                             { key: 'lpm', label: 'LPM' },
-                            { key: 'admin_siakad', label: 'SIAKAD' },
                             { key: 'asesi', label: 'ASESI' },
                         ].map((roleItem) => (
                             <button
@@ -495,7 +482,11 @@ export default function PortalUsersIndex({
                                 onClick={() => handleFilterRole(roleItem.key)}
                                 className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
                                     roleFilter === roleItem.key
-                                        ? 'bg-[#125c50] text-white shadow'
+                                        ? roleItem.key === 'unassigned'
+                                            ? 'bg-amber-600 text-white shadow'
+                                            : 'bg-[#125c50] text-white shadow'
+                                        : roleItem.key === 'unassigned' && stats.unassigned_count > 0
+                                        ? 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
                                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                 }`}
                             >
@@ -511,7 +502,7 @@ export default function PortalUsersIndex({
                         <div>
                             <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
                                 <Users className="w-4 h-4 text-emerald-600" />
-                                Daftar Pengguna & Asesor Tersimpan di Database
+                                Daftar Pengguna & Dosen Tersimpan di Database
                             </CardTitle>
                             <p className="text-xs text-slate-500 mt-0.5">
                                 Menampilkan {users.data.length} dari total {users.total} data akun pengguna
@@ -557,9 +548,9 @@ export default function PortalUsersIndex({
                                         <td colSpan={8} className="py-12 text-center text-slate-400">
                                             <div className="max-w-sm mx-auto space-y-2">
                                                 <Database className="w-8 h-8 mx-auto text-slate-300" />
-                                                <p className="font-bold text-slate-600">Belum ada akun portal tersinkron.</p>
+                                                <p className="font-bold text-slate-600">Tidak ada data akun pada filter ini.</p>
                                                 <p className="text-xs text-slate-400">
-                                                    Klik tombol <em>"Tarik Semua Akun Portal"</em> di atas untuk mengimpor seluruh akun dosen.
+                                                    Klik tombol <em>"Tarik Semua Akun Portal"</em> untuk mengimpor seluruh akun dosen.
                                                 </p>
                                             </div>
                                         </td>
@@ -567,12 +558,15 @@ export default function PortalUsersIndex({
                                 ) : (
                                     users.data.map((user) => {
                                         const isSelected = selectedUserIds.includes(user.id);
+                                        const isUnassigned = !user.role;
                                         return (
                                             <tr
                                                 key={user.id}
                                                 className={`transition-colors ${
                                                     isSelected
                                                         ? 'bg-indigo-50/80 hover:bg-indigo-100/70'
+                                                        : isUnassigned
+                                                        ? 'bg-amber-50/20 hover:bg-amber-50/50'
                                                         : 'hover:bg-slate-50/70'
                                                 }`}
                                             >
@@ -586,7 +580,7 @@ export default function PortalUsersIndex({
                                                 </td>
                                                 <td className="py-3 px-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm text-white ${user.role === 'asesor' ? 'bg-indigo-600' : 'bg-emerald-700'}`}>
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm text-white ${user.role === 'asesor' ? 'bg-indigo-600' : isUnassigned ? 'bg-amber-500' : 'bg-emerald-700'}`}>
                                                             {user.role === 'asesor' ? <GraduationCap className="w-4 h-4" /> : user.name.charAt(0)}
                                                         </div>
                                                         <div>
@@ -613,9 +607,16 @@ export default function PortalUsersIndex({
                                                 </td>
                                                 <td className="py-3 px-4 text-slate-600">{user.email}</td>
                                                 <td className="py-3 px-4">
-                                                    <Badge variant={getRoleBadgeVariant(user.role)} size="sm">
-                                                        {user.role_label}
-                                                    </Badge>
+                                                    {user.role ? (
+                                                        <Badge variant={getRoleBadgeVariant(user.role)} size="sm">
+                                                            {user.role_label}
+                                                        </Badge>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[11px] font-extrabold border border-amber-300">
+                                                            <HelpCircle className="w-3 h-3 text-amber-600" />
+                                                            Belum Diberi Role
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="py-3 px-4">
                                                     {user.is_portal_synced ? (
@@ -633,15 +634,19 @@ export default function PortalUsersIndex({
                                                 </td>
                                                 <td className="py-3 px-4 text-right">
                                                     <div className="flex items-center justify-end gap-1.5">
-                                                        {/* Quick Set Role to Asesor if not yet Asesor */}
+                                                        {/* Primary Quick Assign to Asesor */}
                                                         {user.role !== 'asesor' && (
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleQuickAssignAsesor(user)}
-                                                                className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-[11px] transition-colors flex items-center gap-1"
-                                                                title="Jadikan Asesor RPL"
+                                                                className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition-all flex items-center gap-1 ${
+                                                                    isUnassigned
+                                                                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
+                                                                        : 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100'
+                                                                }`}
+                                                                title="Tetapkan Sebagai Asesor RPL"
                                                             >
-                                                                <GraduationCap className="w-3 h-3" />
+                                                                <GraduationCap className="w-3.5 h-3.5" />
                                                                 <span>Jadikan Asesor</span>
                                                             </button>
                                                         )}
@@ -651,7 +656,7 @@ export default function PortalUsersIndex({
                                                             type="button"
                                                             onClick={() => handleOpenRoleModal(user)}
                                                             className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
-                                                            title="Ubah Peran Pengguna"
+                                                            title="Ubah / Tetapkan Peran"
                                                         >
                                                             <UserCog className="w-3.5 h-3.5" />
                                                         </button>
@@ -667,15 +672,6 @@ export default function PortalUsersIndex({
                                                                 <Code className="w-3.5 h-3.5" />
                                                             </button>
                                                         )}
-
-                                                        {/* Re-Sync Button */}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleOpenSyncModal(user.role, user.username || user.email)}
-                                                            className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-[11px] transition-colors"
-                                                        >
-                                                            Sinkron Ulang
-                                                        </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -755,17 +751,17 @@ export default function PortalUsersIndex({
             <Modal
                 isOpen={isBulkSyncModalOpen}
                 onClose={() => setIsBulkSyncModalOpen(false)}
-                title="Tarik & Sinkronkan Seluruh Akun dari Portal API"
+                title="Tarik Seluruh Akun dari Portal API"
                 size="md"
             >
                 <form onSubmit={handleBulkSyncSubmit} className="space-y-4">
                     <div className="p-3.5 bg-gradient-to-br from-amber-50 to-emerald-50 rounded-2xl border border-amber-200 text-xs text-amber-950 space-y-1">
                         <div className="font-bold flex items-center gap-1.5 text-amber-900">
                             <DownloadCloud className="w-4 h-4 text-amber-600" />
-                            <span>Impor Massal Akun Portal ke Database Lokal</span>
+                            <span>Impor Massal Akun Portal (Peran Awal Kosong)</span>
                         </div>
                         <p className="text-slate-600 leading-relaxed">
-                            Sistem akan menghubungi endpoint Portal API (<code>/users</code> / <code>/dosen</code>) untuk menarik seluruh data akun dosen dan menyimpannya ke database lokal SIRPL. Setelah ditarik, Anda dapat memilih dan menetapkan peran mereka sebagai <strong>Asesor</strong>.
+                            Sistem akan menarik seluruh data akun dosen dari Portal API. Akun-akun ini akan masuk ke database dengan <strong>peran kosong (belum diset)</strong> agar Anda dapat memilih dan menetapkan siapa yang bertugas sebagai <strong>Asesor</strong>.
                         </p>
                     </div>
 
@@ -785,16 +781,12 @@ export default function PortalUsersIndex({
 
                     <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Peran Awal Default:
+                            Status Peran Awal:
                         </label>
-                        <select
-                            value={bulkSyncForm.data.default_role}
-                            onChange={(e) => bulkSyncForm.setData('default_role', e.target.value)}
-                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-800"
-                        >
-                            <option value="asesor">🎓 Asesor Evaluator (Rekomendasi Dosen)</option>
-                            <option value="asesi">👤 Asesi / Pengguna Standar</option>
-                        </select>
+                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-medium flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-amber-500" />
+                            <span><strong>Kosong / Belum Ditetapkan</strong> (Role akan diset kemudian oleh Admin)</span>
+                        </div>
                     </div>
 
                     <div className="pt-2 flex justify-end gap-2">
@@ -814,134 +806,13 @@ export default function PortalUsersIndex({
                             className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black"
                         >
                             <DownloadCloud className="w-3.5 h-3.5 mr-1.5" />
-                            Mulai Tarik Semua Akun
+                            Tarik Semua Akun
                         </Button>
                     </div>
                 </form>
             </Modal>
 
-            {/* MODAL 2: SINKRONKAN AKUN INDIVIDUAL */}
-            <Modal
-                isOpen={isSyncModalOpen}
-                onClose={() => setIsSyncModalOpen(false)}
-                title="Sinkronkan Akun Satuan dari Portal"
-                size="md"
-            >
-                <form onSubmit={handleSyncSingleSubmit} className="space-y-4">
-                    <div className="p-3.5 bg-gradient-to-br from-indigo-50 to-emerald-50 rounded-2xl border border-indigo-200 text-xs text-indigo-950 space-y-1">
-                        <div className="font-bold flex items-center gap-1.5 text-indigo-900">
-                            <GraduationCap className="w-4 h-4 text-indigo-600" />
-                            <span>Penarikan Akun Dosen / Pengguna Spesifik</span>
-                        </div>
-                        <p className="text-slate-600 leading-relaxed">
-                            Masukkan Username / NIP dan Password portal untuk menarik data satu akun spesifik.
-                        </p>
-                    </div>
-
-                    {/* Quick Demo Dosen Picker */}
-                    <div className="space-y-1.5">
-                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-amber-500" />
-                            Contoh Akun Dosen Portal:
-                        </span>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                            {sampleDosenPresets.map((preset) => (
-                                <button
-                                    key={preset.username}
-                                    type="button"
-                                    onClick={() => {
-                                        syncForm.setData({
-                                            username: preset.username,
-                                            password: '123',
-                                            target_role: preset.role,
-                                        });
-                                    }}
-                                    className="p-2 rounded-xl text-left border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all text-xs"
-                                >
-                                    <div className="font-bold text-slate-800 text-[11px] truncate">{preset.label}</div>
-                                    <div className="text-[10px] text-slate-400 font-mono">{preset.username}</div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Username / NIP Portal <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            required
-                            value={syncForm.data.username}
-                            onChange={(e) => syncForm.setData('username', e.target.value)}
-                            placeholder="Contoh: 198503032010011003 atau dosen.ahmad"
-                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
-                        />
-                        {syncForm.errors.username && (
-                            <p className="text-xs text-red-600 mt-1">{syncForm.errors.username}</p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Password Portal <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="password"
-                            required
-                            value={syncForm.data.password}
-                            onChange={(e) => syncForm.setData('password', e.target.value)}
-                            placeholder="Masukkan password portal"
-                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
-                        />
-                        {syncForm.errors.password && (
-                            <p className="text-xs text-red-600 mt-1">{syncForm.errors.password}</p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Tetapkan Peran Sistem RPL <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                            value={syncForm.data.target_role}
-                            onChange={(e) => syncForm.setData('target_role', e.target.value)}
-                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-bold text-slate-800"
-                        >
-                            <option value="asesor">🎓 Asesor Evaluator (Rekomendasi Dosen)</option>
-                            <option value="admin_rpl">🛡️ Admin Pusat RPL</option>
-                            <option value="kaprodi">👔 Ketua Program Studi (Kaprodi)</option>
-                            <option value="lpm">🔍 Lembaga Penjaminan Mutu (LPM)</option>
-                            <option value="admin_siakad">💻 Administrator SIAKAD & Feeder</option>
-                            <option value="asesi">👤 Asesi / Calon Mahasiswa</option>
-                            <option value="super_admin">⚡ Super Administrator</option>
-                        </select>
-                    </div>
-
-                    <div className="pt-2 flex justify-end gap-2">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setIsSyncModalOpen(false)}
-                        >
-                            Batal
-                        </Button>
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            size="sm"
-                            isLoading={syncForm.processing}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-                        >
-                            <UserCheck className="w-3.5 h-3.5 mr-1.5" />
-                            Tarik & Tetapkan Role
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
-
-            {/* MODAL 3: PENETAPAN PERAN MASSAL (BATCH ROLE ASSIGNMENT) */}
+            {/* MODAL 2: PENETAPAN PERAN MASSAL (BATCH ROLE ASSIGNMENT) */}
             <Modal
                 isOpen={isBatchRoleModalOpen}
                 onClose={() => setIsBatchRoleModalOpen(false)}
@@ -950,12 +821,12 @@ export default function PortalUsersIndex({
             >
                 <div className="space-y-4">
                     <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-200 text-xs text-indigo-950">
-                        Pilih peran sistem SIRPL yang ingin ditetapkan untuk <strong>{selectedUserIds.length} pengguna</strong> yang telah Anda pilih.
+                        Pilih peran sistem SIRPL yang ingin ditetapkan untuk <strong>{selectedUserIds.length} akun dosen</strong> yang telah Anda centang.
                     </div>
 
                     <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Pilih Peran Baru:
+                            Pilih Peran:
                         </label>
                         <select
                             value={batchRole}
@@ -994,28 +865,28 @@ export default function PortalUsersIndex({
                 </div>
             </Modal>
 
-            {/* MODAL 4: UBAH PERAN PENGGUNA INDIVIDUAL */}
+            {/* MODAL 3: UBAH PERAN PENGGUNA INDIVIDUAL */}
             <Modal
                 isOpen={!!roleEditUser}
                 onClose={() => setRoleEditUser(null)}
-                title={`Ubah Peran Pengguna - ${roleEditUser?.name}`}
+                title={`Tetapkan / Ubah Peran - ${roleEditUser?.name}`}
                 size="md"
             >
                 <form onSubmit={handleRoleUpdateSubmit} className="space-y-4">
                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700">
-                        Pilih peran sistem SIRPL yang ingin ditetapkan untuk pengguna <strong>{roleEditUser?.name}</strong> ({roleEditUser?.username || roleEditUser?.email}).
+                        Pilih peran sistem SIRPL untuk dosen <strong>{roleEditUser?.name}</strong> ({roleEditUser?.username || roleEditUser?.email}).
                     </div>
 
                     <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Pilih Peran Baru:
+                            Pilih Peran:
                         </label>
                         <select
                             value={roleForm.data.role}
                             onChange={(e) => roleForm.setData('role', e.target.value)}
                             className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-bold text-slate-800"
                         >
-                            <option value="asesor">🎓 Asesor Evaluator</option>
+                            <option value="asesor">🎓 Asesor Evaluator (Rekomendasi Dosen)</option>
                             <option value="admin_rpl">🛡️ Admin Pusat RPL</option>
                             <option value="kaprodi">👔 Ketua Program Studi (Kaprodi)</option>
                             <option value="lpm">🔍 Lembaga Penjaminan Mutu (LPM)</option>
@@ -1047,7 +918,7 @@ export default function PortalUsersIndex({
                 </form>
             </Modal>
 
-            {/* MODAL 5: DETAIL JSON DATA PORTAL */}
+            {/* MODAL 4: DETAIL JSON DATA PORTAL */}
             <Modal
                 isOpen={!!selectedUserJson}
                 onClose={() => setSelectedUserJson(null)}

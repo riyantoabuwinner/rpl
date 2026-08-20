@@ -34,7 +34,11 @@ class PortalUserController extends Controller
                 });
             })
             ->when($roleFilter, function ($query, $roleFilter) {
-                $query->where('role', $roleFilter);
+                if ($roleFilter === 'unassigned' || $roleFilter === 'null') {
+                    $query->whereNull('role');
+                } else {
+                    $query->where('role', $roleFilter);
+                }
             })
             ->latest('updated_at');
 
@@ -46,8 +50,8 @@ class PortalUserController extends Controller
                 'email' => $user->email,
                 'nik' => $user->masked_nik,
                 'phone' => $user->phone,
-                'role' => $user->role?->value ?? (string) $user->role,
-                'role_label' => $user->role?->label() ?? (string) $user->role,
+                'role' => $user->role?->value ?? null,
+                'role_label' => $user->role?->label() ?? 'Belum Ditetapkan',
                 'portal_id' => $user->portal_id,
                 'is_portal_synced' => !empty($user->portal_id) || !empty($user->portal_data),
                 'portal_synced_at' => $user->portal_synced_at ? $user->portal_synced_at->format('d M Y H:i:s') : ($user->portal_data ? $user->updated_at->format('d M Y H:i:s') : null),
@@ -62,6 +66,8 @@ class PortalUserController extends Controller
         $totalUsers = User::count();
         $syncedUsersCount = User::whereNotNull('portal_id')->orWhereNotNull('portal_data')->count();
         $activeUsersCount = User::where('is_active', true)->count();
+        $unassignedCount = User::whereNull('role')->count();
+        $asesorCount = User::where('role', 'asesor')->count();
         $lastSyncedUser = User::whereNotNull('portal_synced_at')->latest('portal_synced_at')->first();
 
         // Check Portal API Connectivity Status
@@ -99,6 +105,8 @@ class PortalUserController extends Controller
                 'synced_portal_count' => $syncedUsersCount,
                 'local_only_count' => max(0, $totalUsers - $syncedUsersCount),
                 'active_users_count' => $activeUsersCount,
+                'unassigned_count' => $unassignedCount,
+                'asesor_count' => $asesorCount,
                 'last_synced_at' => $lastSyncedUser?->portal_synced_at?->format('d M Y H:i:s'),
             ],
             'connection' => $connectionStatus,
