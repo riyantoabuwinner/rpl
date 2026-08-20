@@ -323,16 +323,25 @@ export default function PortalUsersIndex({
                             className="bg-white/10 hover:bg-white/20 text-white border-white/20 shadow-sm"
                         >
                             <Server className="w-4 h-4 mr-1.5" />
-                            Uji Koneksi API
+                            Uji Koneksi
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            size="md"
+                            onClick={() => handleOpenSyncModal('unassigned')}
+                            className="bg-white/10 hover:bg-white/20 text-white border-white/20 shadow-sm"
+                        >
+                            <UserPlus className="w-4 h-4 mr-1.5" />
+                            + Akun Individual
                         </Button>
                         <Button
                             variant="primary"
                             size="md"
-                            onClick={() => handleOpenSyncModal('unassigned')}
-                            className="bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-700 text-slate-950 font-black shadow-lg shadow-emerald-950/30 border-0 py-2.5"
+                            onClick={() => setIsBulkSyncModalOpen(true)}
+                            className="bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-black shadow-lg shadow-amber-950/30 border-0 py-2.5"
                         >
-                            <UserPlus className="w-4 h-4 mr-1.5" />
-                            + Tarik & Sinkronkan Akun Portal
+                            <DownloadCloud className="w-4 h-4 mr-1.5" />
+                            Tarik Semua Akun Portal
                         </Button>
                     </div>
                 </div>
@@ -882,6 +891,71 @@ export default function PortalUsersIndex({
                         >
                             <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                             Koneksikan & Sinkronkan
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* MODAL BULK SYNC: TARIK SEMUA AKUN DARI PORTAL */}
+            <Modal
+                isOpen={isBulkSyncModalOpen}
+                onClose={() => setIsBulkSyncModalOpen(false)}
+                title="Tarik & Sinkronkan Seluruh Akun Portal API"
+                size="md"
+            >
+                <form onSubmit={handleBulkSyncSubmit} className="space-y-4">
+                    <div className="p-3.5 bg-gradient-to-br from-amber-50 to-emerald-50 rounded-2xl border border-amber-200 text-xs text-amber-950 space-y-1.5">
+                        <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                            <DownloadCloud className="w-4 h-4 text-amber-600" />
+                            <span>Impor Massal Akun Portal (Peran Awal Kosong)</span>
+                        </div>
+                        <p className="text-slate-600 leading-relaxed">
+                            Sistem akan menarik seluruh data akun dosen dari server Portal API ke database lokal SIRPL secara otomatis dengan <strong>peran awal kosong (belum diset)</strong> agar Anda dapat memilih dan menetapkan siapa yang bertugas sebagai <strong>Asesor</strong>.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Kategori Akun yang Ditarik:
+                        </label>
+                        <select
+                            value={bulkSyncForm.data.type}
+                            onChange={(e) => bulkSyncForm.setData('type', e.target.value)}
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-800"
+                        >
+                            <option value="all">Semua Akun Dosen & Pengguna Portal</option>
+                            <option value="dosen">Hanya Akun Dosen Tetap / Pengajar</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Status Peran Awal:
+                        </label>
+                        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-medium flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-amber-500" />
+                            <span><strong>Kosong / Belum Ditetapkan</strong> (Role akan diset kemudian oleh Admin)</span>
+                        </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setIsBulkSyncModalOpen(false)}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="primary"
+                            size="sm"
+                            isLoading={bulkSyncForm.processing}
+                            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-md shadow-amber-950/20"
+                        >
+                            <DownloadCloud className="w-3.5 h-3.5 mr-1.5" />
+                            Tarik & Sinkronkan Semua
                         </Button>
                     </div>
                 </form>
