@@ -15,6 +15,18 @@ class UserSeeder extends Seeder
 
         $users = [
             [
+                'name' => 'Admin Portal IAIN / UIN SSC',
+                'username' => 'adminportal_iain',
+                'email' => 'adminportal@uinssc.ac.id',
+                'nik' => '3271010101900099',
+                'phone' => '081234567899',
+                'role' => UserRole::ADMIN_RPL,
+                'password' => Hash::make('123'),
+                'portal_id' => 'portal_adminportal_iain',
+                'portal_synced_at' => now(),
+                'email_verified_at' => now(),
+            ],
+            [
                 'name' => 'Super Administrator',
                 'username' => 'superadmin',
                 'email' => 'superadmin@kampus.ac.id',
