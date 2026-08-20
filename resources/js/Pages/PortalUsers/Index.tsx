@@ -11,6 +11,7 @@ import {
     Search,
     KeyRound,
     UserCheck,
+    UserPlus,
     Eye,
     ArrowUpDown,
     Clock,
