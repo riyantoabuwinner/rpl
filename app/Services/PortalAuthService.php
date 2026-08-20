@@ -202,10 +202,8 @@ class PortalAuthService
                 $nik = isset($raw['nik']) ? (string) $raw['nik'] : (isset($raw['ktp']) ? (string) $raw['ktp'] : null);
                 $phone = isset($raw['phone']) ? (string) $raw['phone'] : (isset($raw['no_hp']) ? (string) $raw['no_hp'] : (isset($raw['telepon']) ? (string) $raw['telepon'] : null));
                 $portalId = (string) ($raw['id'] ?? $raw['user_id'] ?? $raw['portal_id'] ?? $username);
-                $roleStr = (string) ($raw['role'] ?? $raw['user_role'] ?? $raw['level'] ?? $raw['jenis_pengguna'] ?? 'dosen');
-
-                // Determine role
-                $assignedRole = $defaultRole ?? $this->mapPortalRole($roleStr, $username);
+                // Protected system accounts that keep their admin role
+                $protectedUsernames = ['superadmin', 'adminrpl', 'adminportal_iain', 'siakad'];
 
                 // Find existing user by username, email, or nik
                 $existingUser = User::where('username', $username)
@@ -213,9 +211,12 @@ class PortalAuthService
                     ->when(!empty($nik), fn ($q) => $q->orWhere('nik', $nik))
                     ->first();
 
-                // If user already has an established role locally, preserve it.
-                // Otherwise leave role as null (unassigned) until assigned by Admin/Superadmin.
-                $assignedRole = $existingUser?->role ?? $defaultRole;
+                // If protected account, keep existing role. Otherwise use $defaultRole (null = belum diset)
+                if (in_array($username, $protectedUsernames)) {
+                    $assignedRole = $existingUser?->role ?? UserRole::ADMIN_RPL;
+                } else {
+                    $assignedRole = $defaultRole;
+                }
 
                 $attributes = [
                     'name' => $name,
