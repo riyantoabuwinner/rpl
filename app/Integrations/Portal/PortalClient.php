@@ -49,6 +49,24 @@ class PortalClient
         );
     }
 
+    /**
+     * Fetch all portal user accounts (Dosen, Pegawai, dll)
+     * GET /api/v2/portal/users?type=all
+     */
+    public function fetchPortalUsers(?string $type = 'all'): array
+    {
+        $endpoint = $this->baseUrl . '/users';
+        $requestId = (string) Str::uuid();
+
+        return $this->sendRequest(
+            method: 'GET',
+            url: $endpoint,
+            params: ['type' => $type ?? 'all'],
+            action: 'FetchPortalUsers',
+            requestId: $requestId
+        );
+    }
+
     public function getBaseUrl(): string
     {
         return $this->baseUrl . $this->loginEndpoint;

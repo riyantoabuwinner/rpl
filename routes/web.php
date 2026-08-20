@@ -131,7 +131,9 @@ Route::middleware('auth')->group(function () {
     // 11. Integrasi & Sinkronisasi User Portal
     Route::prefix('admin/portal-users')->name('admin.portal-users.')->group(function () {
         Route::get('/', [\App\Http\Controllers\PortalUserController::class, 'index'])->name('index');
+        Route::post('/sync-all', [\App\Http\Controllers\PortalUserController::class, 'syncAll'])->name('sync-all');
         Route::post('/sync-single', [\App\Http\Controllers\PortalUserController::class, 'syncSingle'])->name('sync-single');
+        Route::post('/batch-assign-role', [\App\Http\Controllers\PortalUserController::class, 'batchAssignRole'])->name('batch-assign-role');
         Route::post('/test-connection', [\App\Http\Controllers\PortalUserController::class, 'testConnection'])->name('test-connection');
         Route::post('/{user}/update-role', [\App\Http\Controllers\PortalUserController::class, 'updateRole'])->name('update-role');
     });

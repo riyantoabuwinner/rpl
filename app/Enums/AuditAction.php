@@ -22,4 +22,5 @@ enum AuditAction: string
     case GENERATE_SK = 'GENERATE_SK';
     case SYNC_SIAKAD = 'SYNC_SIAKAD';
     case SYNC_PDDIKTI = 'SYNC_PDDIKTI';
+    case SYNC_PORTAL = 'SYNC_PORTAL';
 }

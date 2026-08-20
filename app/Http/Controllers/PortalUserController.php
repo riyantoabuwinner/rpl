@@ -149,6 +149,44 @@ class PortalUserController extends Controller
     }
 
     /**
+     * Synchronize ALL portal user accounts (Dosen, Pegawai, dll) into local database
+     */
+    public function syncAll(Request $request): RedirectResponse
+    {
+        $type = $request->input('type', 'all');
+        $defaultRoleStr = $request->input('default_role');
+        $defaultRole = $defaultRoleStr ? \App\Enums\UserRole::tryFrom($defaultRoleStr) : null;
+
+        $result = $this->portalAuthService->syncAllUsersFromPortal($type, $defaultRole);
+
+        if ($result['success']) {
+            return back()->with('success', $result['message']);
+        }
+
+        return back()->with('error', $result['message']);
+    }
+
+    /**
+     * Batch assign role to multiple selected users
+     */
+    public function batchAssignRole(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'user_ids' => 'required|array|min:1',
+            'user_ids.*' => 'required|integer|exists:users,id',
+            'role' => 'required|string|in:super_admin,admin_rpl,asesi,asesor,kaprodi,lpm,admin_siakad',
+        ]);
+
+        $userIds = $request->input('user_ids');
+        $newRole = \App\Enums\UserRole::from($request->input('role'));
+
+        User::whereIn('id', $userIds)->update(['role' => $newRole]);
+
+        $count = count($userIds);
+        return back()->with('success', "Berhasil menetapkan peran [{$newRole->label()}] untuk {$count} akun pengguna terpilih.");
+    }
+
+    /**
      * Test connection to Portal API server
      */
     public function testConnection(): RedirectResponse

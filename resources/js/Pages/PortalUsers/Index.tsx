@@ -24,6 +24,10 @@ import {
     Sparkles,
     UserCog,
     ChevronDown,
+    CheckSquare,
+    Square,
+    DownloadCloud,
+    Filter,
 } from 'lucide-react';
 import { AppLayout } from '@/Components/Layout/AppLayout';
 import { Card, CardHeader, CardTitle, CardContent } from '@/Components/UI/Card';
@@ -111,17 +115,29 @@ export default function PortalUsersIndex({
     const [search, setSearch] = useState(filters.search || '');
     const [roleFilter, setRoleFilter] = useState(filters.role || '');
     const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+    const [isBulkSyncModalOpen, setIsBulkSyncModalOpen] = useState(false);
     const [selectedUserJson, setSelectedUserJson] = useState<UserItem | null>(null);
     const [roleEditUser, setRoleEditUser] = useState<UserItem | null>(null);
 
-    // Sync Single User Form (Default Role: Asesor Evaluator for Dosen Portal)
+    // Multi-select for batch role assignment
+    const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+    const [isBatchRoleModalOpen, setIsBatchRoleModalOpen] = useState(false);
+    const [batchRole, setBatchRole] = useState('asesor');
+
+    // Sync Single User Form
     const syncForm = useForm({
         username: '',
         password: '',
         target_role: 'asesor',
     });
 
-    // Role Update Form
+    // Bulk Sync Form
+    const bulkSyncForm = useForm({
+        type: 'all',
+        default_role: 'asesor',
+    });
+
+    // Single Role Update Form
     const roleForm = useForm({
         role: 'asesor',
     });
@@ -164,6 +180,16 @@ export default function PortalUsersIndex({
         });
     };
 
+    const handleBulkSyncSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        bulkSyncForm.post('/admin/portal-users/sync-all', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsBulkSyncModalOpen(false);
+            },
+        });
+    };
+
     const handleOpenRoleModal = (user: UserItem) => {
         setRoleEditUser(user);
         roleForm.setData('role', user.role);
@@ -185,6 +211,38 @@ export default function PortalUsersIndex({
         router.post(`/admin/portal-users/${user.id}/update-role`, {
             role: 'asesor',
         }, { preserveScroll: true });
+    };
+
+    // Selection Handling
+    const handleSelectAllOnPage = () => {
+        if (selectedUserIds.length === users.data.length) {
+            setSelectedUserIds([]);
+        } else {
+            setSelectedUserIds(users.data.map((u) => u.id));
+        }
+    };
+
+    const handleToggleSelectUser = (id: number) => {
+        if (selectedUserIds.includes(id)) {
+            setSelectedUserIds(selectedUserIds.filter((item) => item !== id));
+        } else {
+            setSelectedUserIds([...selectedUserIds, id]);
+        }
+    };
+
+    const handleBatchAssignSubmit = (targetRole: string = batchRole) => {
+        if (selectedUserIds.length === 0) return;
+
+        router.post('/admin/portal-users/batch-assign-role', {
+            user_ids: selectedUserIds,
+            role: targetRole,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setSelectedUserIds([]);
+                setIsBatchRoleModalOpen(false);
+            },
+        });
     };
 
     const handleTestConnection = () => {
@@ -213,15 +271,17 @@ export default function PortalUsersIndex({
 
     // Quick demo Dosen profiles for easy testing
     const sampleDosenPresets = [
-        { label: 'Dr. Ahmad Konselor, M.Pd.', username: 'dosen.ahmad', role: 'asesor' },
-        { label: 'Dr. Siti Aminah, M.T.', username: 'dosen.siti', role: 'asesor' },
-        { label: 'Prof. Dr. Ir. Bambang Hermanto', username: 'dosen.bambang', role: 'asesor' },
+        { label: 'Dr. Ahmad Konselor, M.Pd.', username: '198503032010011003', role: 'asesor' },
+        { label: 'Dr. Siti Aminah, M.T.', username: '198704042012012004', role: 'asesor' },
+        { label: 'Prof. Dr. Ir. Bambang Hermanto', username: '198005052008011005', role: 'asesor' },
     ];
+
+    const isAllSelected = users.data.length > 0 && selectedUserIds.length === users.data.length;
 
     return (
         <AppLayout
             title="Sinkronisasi Pengguna Portal & Asesor"
-            subtitle="Manajemen integrasi akun Portal API Dosen sebagai Asesor Evaluator SIRPL"
+            subtitle="Tarik seluruh data akun dari Portal API dan tetapkan peran Asesor Evaluator SIRPL"
         >
             <div className="space-y-6">
                 {/* 1. Header Banner & Actions */}
@@ -230,14 +290,14 @@ export default function PortalUsersIndex({
                     
                     <div className="space-y-2 relative z-10 max-w-2xl">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold border border-amber-400/30">
-                            <GraduationCap className="w-3.5 h-3.5" />
-                            <span>Integrasi Dosen Portal & Asesor RPL</span>
+                            <DownloadCloud className="w-3.5 h-3.5" />
+                            <span>Sinkronisasi Massal & Penetapan Peran Asesor</span>
                         </div>
                         <h2 className="text-2xl font-black tracking-tight text-white">
-                            Sinkronisasi Dosen Portal & Manajemen Pengguna
+                            Sinkronisasi Seluruh Akun Portal & Asesor
                         </h2>
                         <p className="text-xs sm:text-sm text-emerald-100/80 leading-relaxed">
-                            Admin & Superadmin dapat menarik data akun <strong>Dosen dari Portal SSO</strong> dan menetapkannya secara langsung sebagai <strong>Asesor Evaluator</strong>. Kredensial tersimpan di database lokal sehingga saat asesor login tidak membebani server Portal API.
+                            Admin/Superadmin dapat <strong>menarik seluruh data akun (Dosen & Pegawai) dari Portal API</strong> sekaligus ke database lokal, kemudian memilih akun yang akan diberi peran sebagai <strong>Asesor Evaluator</strong>.
                         </p>
                     </div>
 
@@ -252,13 +312,22 @@ export default function PortalUsersIndex({
                             Uji Koneksi API
                         </Button>
                         <Button
-                            variant="primary"
+                            variant="secondary"
                             size="md"
                             onClick={() => handleOpenSyncModal('asesor')}
-                            className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-950/20 border-0"
+                            className="bg-emerald-600/80 hover:bg-emerald-600 text-white border-emerald-400/30 shadow-sm"
                         >
-                            <GraduationCap className="w-4 h-4 mr-1.5" />
-                            Sinkronkan Dosen sebagai Asesor
+                            <UserCheck className="w-4 h-4 mr-1.5" />
+                            Sinkron Satuan
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="md"
+                            onClick={() => setIsBulkSyncModalOpen(true)}
+                            className="bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-black shadow-lg shadow-amber-950/30 border-0 py-2.5"
+                        >
+                            <DownloadCloud className="w-4 h-4 mr-1.5" />
+                            Tarik Semua Akun Portal
                         </Button>
                     </div>
                 </div>
@@ -326,19 +395,20 @@ export default function PortalUsersIndex({
                     </Card>
                 </div>
 
-                {/* 3. Role Assignment Highlight Alert */}
-                <div className="p-4 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 text-indigo-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                {/* 3. Role Assignment Workflow Guide */}
+                <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-emerald-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div className="flex items-start gap-3">
-                        <div className="p-2.5 rounded-xl bg-indigo-600 text-white mt-0.5 shadow-sm">
-                            <GraduationCap className="w-5 h-5" />
+                        <div className="p-2.5 rounded-xl bg-emerald-600 text-white mt-0.5 shadow-sm">
+                            <CheckCircle2 className="w-5 h-5" />
                         </div>
                         <div className="space-y-0.5 text-xs">
-                            <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                                <span>Penetapan Role Asesor untuk Dosen Portal:</span>
-                                <Badge variant="indigo" size="sm">Fitur Asesor</Badge>
+                            <p className="font-bold text-slate-900 flex items-center gap-2">
+                                <span>Alur Kerja Sinkronisasi & Penetapan Asesor:</span>
+                                <Badge variant="emerald" size="sm">Langkah Mudah</Badge>
                             </p>
                             <p className="text-slate-600 leading-relaxed">
-                                Saat menarik data akun dosen dari portal, pilih opsi peran <strong>"Asesor Evaluator"</strong>. Akun tersebut akan otomatis terdaftar sebagai Asesor RPL yang siap ditugaskan pada mata kuliah dan penilaian portofolio asesi (Form F-02 & F-03).
+                                <strong>1. Tarik Data:</strong> Klik tombol <em>"Tarik Semua Akun Portal"</em> untuk mengimpor seluruh akun dosen ke database lokal. <br />
+                                <strong>2. Pilih & Beri Peran:</strong> Centang satu atau beberapa dosen pada tabel di bawah, lalu klik <em>"Jadikan Asesor"</em> untuk mengaktifkan mereka sebagai penilai portofolio RPL.
                             </p>
                         </div>
                     </div>
@@ -347,7 +417,54 @@ export default function PortalUsersIndex({
                     </div>
                 </div>
 
-                {/* 4. Filter & Search Controls */}
+                {/* 4. Batch Action Toolbar (Muncul saat ada baris yang dicentang) */}
+                {selectedUserIds.length > 0 && (
+                    <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 text-white shadow-xl flex flex-wrap items-center justify-between gap-4 border border-indigo-700 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-xs">
+                                {selectedUserIds.length}
+                            </div>
+                            <div>
+                                <span className="font-extrabold text-sm text-white block leading-none">
+                                    {selectedUserIds.length} Akun Pengguna Terpilih
+                                </span>
+                                <span className="text-[11px] text-indigo-200">
+                                    Siap untuk ditetapkan perannya secara massal
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => handleBatchAssignSubmit('asesor')}
+                                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs shadow flex items-center gap-1.5"
+                            >
+                                <GraduationCap className="w-4 h-4" />
+                                <span>Tetapkan Sebagai Asesor RPL ({selectedUserIds.length})</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsBatchRoleModalOpen(true)}
+                                className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5"
+                            >
+                                <UserCog className="w-4 h-4" />
+                                <span>Pilih Peran Lain...</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setSelectedUserIds([])}
+                                className="px-3 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 font-bold text-xs border border-rose-400/30"
+                            >
+                                Batal Pilihan
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* 5. Filter & Search Controls */}
                 <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                     <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
                         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
@@ -388,7 +505,7 @@ export default function PortalUsersIndex({
                     </div>
                 </div>
 
-                {/* 5. User Data Table */}
+                {/* 6. User Data Table with Multi-Select Checkboxes */}
                 <Card className="border-slate-200 shadow-sm overflow-hidden">
                     <CardHeader className="bg-slate-50/70 border-b border-slate-200 px-6 py-4 flex flex-row items-center justify-between">
                         <div>
@@ -400,12 +517,31 @@ export default function PortalUsersIndex({
                                 Menampilkan {users.data.length} dari total {users.total} data akun pengguna
                             </p>
                         </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={handleSelectAllOnPage}
+                                className="px-2.5 py-1 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5"
+                            >
+                                {isAllSelected ? <CheckSquare className="w-3.5 h-3.5 text-emerald-600" /> : <Square className="w-3.5 h-3.5 text-slate-400" />}
+                                <span>{isAllSelected ? 'Batalkan Semua' : 'Pilih Semua di Halaman'}</span>
+                            </button>
+                        </div>
                     </CardHeader>
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                             <thead className="bg-slate-100/80 text-slate-700 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
                                 <tr>
+                                    <th className="py-3 px-3 w-10 text-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={isAllSelected}
+                                            onChange={handleSelectAllOnPage}
+                                            className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                        />
+                                    </th>
                                     <th className="py-3 px-4">Pengguna / Dosen</th>
                                     <th className="py-3 px-4">Username Portal</th>
                                     <th className="py-3 px-4">Email</th>
@@ -418,109 +554,133 @@ export default function PortalUsersIndex({
                             <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                                 {users.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="py-8 text-center text-slate-400">
-                                            Tidak ditemukan data akun pengguna.
+                                        <td colSpan={8} className="py-12 text-center text-slate-400">
+                                            <div className="max-w-sm mx-auto space-y-2">
+                                                <Database className="w-8 h-8 mx-auto text-slate-300" />
+                                                <p className="font-bold text-slate-600">Belum ada akun portal tersinkron.</p>
+                                                <p className="text-xs text-slate-400">
+                                                    Klik tombol <em>"Tarik Semua Akun Portal"</em> di atas untuk mengimpor seluruh akun dosen.
+                                                </p>
+                                            </div>
                                         </td>
                                     </tr>
                                 ) : (
-                                    users.data.map((user) => (
-                                        <tr key={user.id} className="hover:bg-slate-50/70 transition-colors">
-                                            <td className="py-3 px-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm text-white ${user.role === 'asesor' ? 'bg-indigo-600' : 'bg-emerald-700'}`}>
-                                                        {user.role === 'asesor' ? <GraduationCap className="w-4 h-4" /> : user.name.charAt(0)}
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                                                            <span>{user.name}</span>
-                                                            {user.role === 'asesor' && (
-                                                                <span className="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.2 rounded border border-indigo-200">
-                                                                    Asesor
-                                                                </span>
+                                    users.data.map((user) => {
+                                        const isSelected = selectedUserIds.includes(user.id);
+                                        return (
+                                            <tr
+                                                key={user.id}
+                                                className={`transition-colors ${
+                                                    isSelected
+                                                        ? 'bg-indigo-50/80 hover:bg-indigo-100/70'
+                                                        : 'hover:bg-slate-50/70'
+                                                }`}
+                                            >
+                                                <td className="py-3 px-3 text-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => handleToggleSelectUser(user.id)}
+                                                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                    />
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm text-white ${user.role === 'asesor' ? 'bg-indigo-600' : 'bg-emerald-700'}`}>
+                                                            {user.role === 'asesor' ? <GraduationCap className="w-4 h-4" /> : user.name.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                                                                <span>{user.name}</span>
+                                                                {user.role === 'asesor' && (
+                                                                    <span className="text-[10px] bg-indigo-100 text-indigo-800 font-extrabold px-1.5 py-0.2 rounded border border-indigo-200">
+                                                                        Asesor
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {user.nik && (
+                                                                <div className="text-[10px] text-slate-400">
+                                                                    NIK/NIP: {user.nik}
+                                                                </div>
                                                             )}
                                                         </div>
-                                                        {user.nik && (
-                                                            <div className="text-[10px] text-slate-400">
-                                                                NIK/NIP: {user.nik}
-                                                            </div>
-                                                        )}
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <div className="font-mono text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
-                                                    {user.username || '-'}
-                                                </div>
-                                            </td>
-                                            <td className="py-3 px-4 text-slate-600">{user.email}</td>
-                                            <td className="py-3 px-4">
-                                                <Badge variant={getRoleBadgeVariant(user.role)} size="sm">
-                                                    {user.role_label}
-                                                </Badge>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                {user.is_portal_synced ? (
-                                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                                        <Check className="w-3 h-3" /> Tersinkron Portal
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
-                                                        <Database className="w-3 h-3" /> Database Lokal
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="py-3 px-4 text-slate-500 text-[11px]">
-                                                {user.portal_synced_at || user.updated_at || '-'}
-                                            </td>
-                                            <td className="py-3 px-4 text-right">
-                                                <div className="flex items-center justify-end gap-1.5">
-                                                    {/* Quick Set Role to Asesor if not yet Asesor */}
-                                                    {user.role !== 'asesor' && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleQuickAssignAsesor(user)}
-                                                            className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-[11px] transition-colors flex items-center gap-1"
-                                                            title="Jadikan Asesor RPL"
-                                                        >
-                                                            <GraduationCap className="w-3 h-3" />
-                                                            <span>Jadikan Asesor</span>
-                                                        </button>
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    <div className="font-mono text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded-md inline-block">
+                                                        {user.username || '-'}
+                                                    </div>
+                                                </td>
+                                                <td className="py-3 px-4 text-slate-600">{user.email}</td>
+                                                <td className="py-3 px-4">
+                                                    <Badge variant={getRoleBadgeVariant(user.role)} size="sm">
+                                                        {user.role_label}
+                                                    </Badge>
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    {user.is_portal_synced ? (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                                            <Check className="w-3 h-3" /> Tersinkron Portal
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                                                            <Database className="w-3 h-3" /> Database Lokal
+                                                        </span>
                                                     )}
+                                                </td>
+                                                <td className="py-3 px-4 text-slate-500 text-[11px]">
+                                                    {user.portal_synced_at || user.updated_at || '-'}
+                                                </td>
+                                                <td className="py-3 px-4 text-right">
+                                                    <div className="flex items-center justify-end gap-1.5">
+                                                        {/* Quick Set Role to Asesor if not yet Asesor */}
+                                                        {user.role !== 'asesor' && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleQuickAssignAsesor(user)}
+                                                                className="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-[11px] transition-colors flex items-center gap-1"
+                                                                title="Jadikan Asesor RPL"
+                                                            >
+                                                                <GraduationCap className="w-3 h-3" />
+                                                                <span>Jadikan Asesor</span>
+                                                            </button>
+                                                        )}
 
-                                                    {/* Change Role Button */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenRoleModal(user)}
-                                                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
-                                                        title="Ubah Peran Pengguna"
-                                                    >
-                                                        <UserCog className="w-3.5 h-3.5" />
-                                                    </button>
-
-                                                    {/* View Portal JSON Payload */}
-                                                    {user.portal_data && (
+                                                        {/* Change Role Button */}
                                                         <button
                                                             type="button"
-                                                            onClick={() => setSelectedUserJson(user)}
+                                                            onClick={() => handleOpenRoleModal(user)}
                                                             className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
-                                                            title="Lihat Data JSON Portal"
+                                                            title="Ubah Peran Pengguna"
                                                         >
-                                                            <Code className="w-3.5 h-3.5" />
+                                                            <UserCog className="w-3.5 h-3.5" />
                                                         </button>
-                                                    )}
 
-                                                    {/* Re-Sync Button */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenSyncModal(user.role, user.username || user.email)}
-                                                        className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-[11px] transition-colors"
-                                                    >
-                                                        Sinkron Ulang
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
+                                                        {/* View Portal JSON Payload */}
+                                                        {user.portal_data && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setSelectedUserJson(user)}
+                                                                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors"
+                                                                title="Lihat Data JSON Portal"
+                                                            >
+                                                                <Code className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        )}
+
+                                                        {/* Re-Sync Button */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleOpenSyncModal(user.role, user.username || user.email)}
+                                                            className="px-2 py-1 rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold text-[11px] transition-colors"
+                                                        >
+                                                            Sinkron Ulang
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
@@ -552,7 +712,7 @@ export default function PortalUsersIndex({
                     )}
                 </Card>
 
-                {/* 6. Recent Logs Card */}
+                {/* 7. Recent Logs Card */}
                 {recentLogs && recentLogs.length > 0 && (
                     <Card className="border-slate-200 shadow-sm">
                         <CardHeader className="px-6 py-4 border-b border-slate-200">
@@ -591,21 +751,90 @@ export default function PortalUsersIndex({
                 )}
             </div>
 
-            {/* MODAL 1: SINKRONKAN AKUN DOSEN / USER DARI PORTAL */}
+            {/* MODAL 1: SINKRONKAN SEMUA AKUN DARI PORTAL (BULK SYNC) */}
+            <Modal
+                isOpen={isBulkSyncModalOpen}
+                onClose={() => setIsBulkSyncModalOpen(false)}
+                title="Tarik & Sinkronkan Seluruh Akun dari Portal API"
+                size="md"
+            >
+                <form onSubmit={handleBulkSyncSubmit} className="space-y-4">
+                    <div className="p-3.5 bg-gradient-to-br from-amber-50 to-emerald-50 rounded-2xl border border-amber-200 text-xs text-amber-950 space-y-1">
+                        <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                            <DownloadCloud className="w-4 h-4 text-amber-600" />
+                            <span>Impor Massal Akun Portal ke Database Lokal</span>
+                        </div>
+                        <p className="text-slate-600 leading-relaxed">
+                            Sistem akan menghubungi endpoint Portal API (<code>/users</code> / <code>/dosen</code>) untuk menarik seluruh data akun dosen dan menyimpannya ke database lokal SIRPL. Setelah ditarik, Anda dapat memilih dan menetapkan peran mereka sebagai <strong>Asesor</strong>.
+                        </p>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Kategori Akun yang Ditarik:
+                        </label>
+                        <select
+                            value={bulkSyncForm.data.type}
+                            onChange={(e) => bulkSyncForm.setData('type', e.target.value)}
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-800"
+                        >
+                            <option value="all">Semua Akun Dosen & Pengguna Portal</option>
+                            <option value="dosen">Hanya Akun Dosen Tetap / Pengajar</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Peran Awal Default:
+                        </label>
+                        <select
+                            value={bulkSyncForm.data.default_role}
+                            onChange={(e) => bulkSyncForm.setData('default_role', e.target.value)}
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-bold text-slate-800"
+                        >
+                            <option value="asesor">🎓 Asesor Evaluator (Rekomendasi Dosen)</option>
+                            <option value="asesi">👤 Asesi / Pengguna Standar</option>
+                        </select>
+                    </div>
+
+                    <div className="pt-2 flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setIsBulkSyncModalOpen(false)}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="primary"
+                            size="sm"
+                            isLoading={bulkSyncForm.processing}
+                            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black"
+                        >
+                            <DownloadCloud className="w-3.5 h-3.5 mr-1.5" />
+                            Mulai Tarik Semua Akun
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* MODAL 2: SINKRONKAN AKUN INDIVIDUAL */}
             <Modal
                 isOpen={isSyncModalOpen}
                 onClose={() => setIsSyncModalOpen(false)}
-                title="Sinkronkan Akun Dosen / Pengguna Portal"
+                title="Sinkronkan Akun Satuan dari Portal"
                 size="md"
             >
                 <form onSubmit={handleSyncSingleSubmit} className="space-y-4">
                     <div className="p-3.5 bg-gradient-to-br from-indigo-50 to-emerald-50 rounded-2xl border border-indigo-200 text-xs text-indigo-950 space-y-1">
                         <div className="font-bold flex items-center gap-1.5 text-indigo-900">
                             <GraduationCap className="w-4 h-4 text-indigo-600" />
-                            <span>Penarikan Akun Dosen sebagai Asesor RPL</span>
+                            <span>Penarikan Akun Dosen / Pengguna Spesifik</span>
                         </div>
                         <p className="text-slate-600 leading-relaxed">
-                            Masukkan Username (NIP/NIDN/Username Portal) dan Password untuk menarik data dari API Portal dan menetapkannya dengan peran yang dipilih.
+                            Masukkan Username / NIP dan Password portal untuk menarik data satu akun spesifik.
                         </p>
                     </div>
 
@@ -638,14 +867,14 @@ export default function PortalUsersIndex({
 
                     <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">
-                            Username / NIP Portal Dosen <span className="text-red-500">*</span>
+                            Username / NIP Portal <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             required
                             value={syncForm.data.username}
                             onChange={(e) => syncForm.setData('username', e.target.value)}
-                            placeholder="Contoh: dosen.ahmad atau 198503032010011003"
+                            placeholder="Contoh: 198503032010011003 atau dosen.ahmad"
                             className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
                         />
                         {syncForm.errors.username && (
@@ -705,14 +934,67 @@ export default function PortalUsersIndex({
                             isLoading={syncForm.processing}
                             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
                         >
-                            <GraduationCap className="w-3.5 h-3.5 mr-1.5" />
+                            <UserCheck className="w-3.5 h-3.5 mr-1.5" />
                             Tarik & Tetapkan Role
                         </Button>
                     </div>
                 </form>
             </Modal>
 
-            {/* MODAL 2: UBAH PERAN PENGGUNA LANGSUNG */}
+            {/* MODAL 3: PENETAPAN PERAN MASSAL (BATCH ROLE ASSIGNMENT) */}
+            <Modal
+                isOpen={isBatchRoleModalOpen}
+                onClose={() => setIsBatchRoleModalOpen(false)}
+                title={`Tetapkan Peran untuk ${selectedUserIds.length} Pengguna Terpilih`}
+                size="md"
+            >
+                <div className="space-y-4">
+                    <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-200 text-xs text-indigo-950">
+                        Pilih peran sistem SIRPL yang ingin ditetapkan untuk <strong>{selectedUserIds.length} pengguna</strong> yang telah Anda pilih.
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Pilih Peran Baru:
+                        </label>
+                        <select
+                            value={batchRole}
+                            onChange={(e) => setBatchRole(e.target.value)}
+                            className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-bold text-slate-800"
+                        >
+                            <option value="asesor">🎓 Asesor Evaluator (Rekomendasi)</option>
+                            <option value="admin_rpl">🛡️ Admin Pusat RPL</option>
+                            <option value="kaprodi">👔 Ketua Program Studi (Kaprodi)</option>
+                            <option value="lpm">🔍 Lembaga Penjaminan Mutu (LPM)</option>
+                            <option value="admin_siakad">💻 Administrator SIAKAD & Feeder</option>
+                            <option value="asesi">👤 Asesi / Calon Mahasiswa</option>
+                            <option value="super_admin">⚡ Super Administrator</option>
+                        </select>
+                    </div>
+
+                    <div className="pt-2 flex justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setIsBatchRoleModalOpen(false)}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleBatchAssignSubmit(batchRole)}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+                        >
+                            Terapkan ke {selectedUserIds.length} Pengguna
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* MODAL 4: UBAH PERAN PENGGUNA INDIVIDUAL */}
             <Modal
                 isOpen={!!roleEditUser}
                 onClose={() => setRoleEditUser(null)}
@@ -765,7 +1047,7 @@ export default function PortalUsersIndex({
                 </form>
             </Modal>
 
-            {/* MODAL 3: DETAIL JSON DATA PORTAL */}
+            {/* MODAL 5: DETAIL JSON DATA PORTAL */}
             <Modal
                 isOpen={!!selectedUserJson}
                 onClose={() => setSelectedUserJson(null)}

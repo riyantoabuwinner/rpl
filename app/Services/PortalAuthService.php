@@ -160,10 +160,125 @@ class PortalAuthService
     /**
      * Test connection to Portal API server
      */
-     public function testConnection(): array
-     {
-         return $this->client->testConnection();
-     }
+    public function testConnection(): array
+    {
+        return $this->client->testConnection();
+    }
+
+    /**
+     * Synchronize all portal users (Dosen / Pegawai) into local database
+     */
+    public function syncAllUsersFromPortal(?string $type = 'all', ?UserRole $defaultRole = null): array
+    {
+        $response = $this->client->fetchPortalUsers($type);
+
+        if (!$response['success']) {
+            return [
+                'success' => false,
+                'message' => $response['message'] ?? 'Gagal mengambil data pengguna dari Portal API.',
+                'synced_count' => 0,
+                'users' => [],
+            ];
+        }
+
+        $portalUsers = $response['data']['data'] ?? ($response['data'] ?? []);
+        if (!is_array($portalUsers)) {
+            $portalUsers = [];
+        }
+
+        $syncedCount = 0;
+        $syncedUsers = [];
+
+        DB::beginTransaction();
+        try {
+            foreach ($portalUsers as $raw) {
+                $username = (string) ($raw['username'] ?? $raw['user_name'] ?? $raw['nim'] ?? $raw['nip'] ?? $raw['id_user'] ?? '');
+                if (empty($username)) {
+                    continue;
+                }
+
+                $name = (string) ($raw['name'] ?? $raw['nama'] ?? $raw['nama_lengkap'] ?? $raw['display_name'] ?? $username);
+                $email = (string) ($raw['email'] ?? $raw['mail'] ?? ($username . '@uinssc.ac.id'));
+                $nik = isset($raw['nik']) ? (string) $raw['nik'] : (isset($raw['ktp']) ? (string) $raw['ktp'] : null);
+                $phone = isset($raw['phone']) ? (string) $raw['phone'] : (isset($raw['no_hp']) ? (string) $raw['no_hp'] : (isset($raw['telepon']) ? (string) $raw['telepon'] : null));
+                $portalId = (string) ($raw['id'] ?? $raw['user_id'] ?? $raw['portal_id'] ?? $username);
+                $roleStr = (string) ($raw['role'] ?? $raw['user_role'] ?? $raw['level'] ?? $raw['jenis_pengguna'] ?? 'dosen');
+
+                // Determine role
+                $assignedRole = $defaultRole ?? $this->mapPortalRole($roleStr, $username);
+
+                // Find existing user by username, email, or nik
+                $existingUser = User::where('username', $username)
+                    ->orWhere('email', $email)
+                    ->when(!empty($nik), fn ($q) => $q->orWhere('nik', $nik))
+                    ->first();
+
+                // If user already has an established role locally, preserve it
+                if ($existingUser && $existingUser->role) {
+                    $assignedRole = $existingUser->role;
+                }
+
+                $attributes = [
+                    'name' => $name,
+                    'username' => $username,
+                    'email' => $email,
+                    'role' => $assignedRole,
+                    'portal_id' => $portalId,
+                    'portal_data' => $raw,
+                    'portal_synced_at' => now(),
+                    'is_active' => true,
+                ];
+
+                if (!empty($nik)) {
+                    $attributes['nik'] = $nik;
+                }
+
+                if (!empty($phone)) {
+                    $attributes['phone'] = $phone;
+                }
+
+                if ($existingUser) {
+                    $existingUser->update($attributes);
+                    $syncedUsers[] = $existingUser;
+                } else {
+                    $attributes['password'] = Hash::make('password123');
+                    $attributes['email_verified_at'] = now();
+                    $syncedUsers[] = User::create($attributes);
+                }
+
+                $syncedCount++;
+            }
+
+            DB::commit();
+
+            AuditLog::record(
+                action: AuditAction::SYNC_PORTAL,
+                entityType: 'UserCatalog',
+                entityId: 'portal_bulk_sync',
+                newValues: [
+                    'type' => $type,
+                    'synced_count' => $syncedCount,
+                ]
+            );
+
+            return [
+                'success' => true,
+                'message' => "Berhasil menarik dan menyinkronkan {$syncedCount} data akun Dosen/Pengguna dari Portal API ke database lokal.",
+                'synced_count' => $syncedCount,
+                'users' => $syncedUsers,
+            ];
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Bulk Sync Portal Users Error: ' . $e->getMessage());
+
+            return [
+                'success' => false,
+                'message' => 'Gagal menyinkronkan data pengguna: ' . $e->getMessage(),
+                'synced_count' => 0,
+                'users' => [],
+            ];
+        }
+    }
 
     /**
      * Synchronize or create the local user record
@@ -172,9 +287,10 @@ class PortalAuthService
     {
         try {
             return DB::transaction(function () use ($userData, $password, $rawPortalPayload) {
-                // Find existing user by username or email
+                // Find existing user by username, email, or NIK
                 $user = User::where('username', $userData['username'])
                     ->orWhere('email', $userData['email'])
+                    ->when(!empty($userData['nik']), fn ($q) => $q->orWhere('nik', $userData['nik']))
                     ->first();
 
                 $attributes = [
