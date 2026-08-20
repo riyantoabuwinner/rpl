@@ -150,17 +150,32 @@ export default function PortalUsersIndex({
         e.preventDefault();
         router.get(
             '/admin/portal-users',
-            { search, role: roleFilter },
-            { preserveState: true, replace: true }
+            { search: search.trim(), role: roleFilter },
+            { preserveState: false, replace: true }
         );
+    };
+
+    const handleClearSearch = () => {
+        setSearch('');
+        router.get(
+            '/admin/portal-users',
+            { search: '', role: roleFilter },
+            { preserveState: false, replace: true }
+        );
+    };
+
+    const handleResetAllFilters = () => {
+        setSearch('');
+        setRoleFilter('');
+        router.get('/admin/portal-users', {}, { preserveState: false, replace: true });
     };
 
     const handleFilterRole = (role: string) => {
         setRoleFilter(role);
         router.get(
             '/admin/portal-users',
-            { search, role },
-            { preserveState: true, replace: true }
+            { search: '', role },
+            { preserveState: false, replace: true }
         );
     };
 
@@ -458,18 +473,33 @@ export default function PortalUsersIndex({
                         <input
                             type="text"
                             value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                if (e.target.value === '' && filters.search) {
+                                    handleClearSearch();
+                                }
+                            }}
                             placeholder="Cari nama dosen, username portal, NIP, atau email..."
-                            className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
+                            className="w-full pl-10 pr-9 py-2 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium"
                         />
+                        {search && (
+                            <button
+                                type="button"
+                                onClick={handleClearSearch}
+                                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 text-xs font-bold"
+                                title="Hapus Pencarian"
+                            >
+                                ✕
+                            </button>
+                        )}
                     </form>
 
                     <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs font-semibold text-slate-500">Filter Peran:</span>
                         {[
-                            { key: '', label: 'Semua' },
+                            { key: '', label: `Semua (${stats.total_users})` },
                             { key: 'unassigned', label: `⚠️ BELUM DISET (${stats.unassigned_count})` },
-                            { key: 'asesor', label: '🎓 ASESOR' },
+                            { key: 'asesor', label: `🎓 ASESOR (${stats.asesor_count})` },
                             { key: 'admin_rpl', label: 'ADMIN RPL' },
                             { key: 'super_admin', label: 'SUPER ADMIN' },
                             { key: 'kaprodi', label: 'KAPRODI' },
@@ -483,7 +513,7 @@ export default function PortalUsersIndex({
                                 className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
                                     roleFilter === roleItem.key
                                         ? roleItem.key === 'unassigned'
-                                            ? 'bg-amber-600 text-white shadow'
+                                            ? 'bg-amber-600 text-white shadow ring-2 ring-amber-300'
                                             : 'bg-[#125c50] text-white shadow'
                                         : roleItem.key === 'unassigned' && stats.unassigned_count > 0
                                         ? 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
@@ -505,11 +535,20 @@ export default function PortalUsersIndex({
                                 Daftar Pengguna & Dosen Tersimpan di Database
                             </CardTitle>
                             <p className="text-xs text-slate-500 mt-0.5">
-                                Menampilkan {users.data.length} dari total {users.total} data akun pengguna
+                                Menampilkan {users.data.length} dari total {users.total} data akun pengguna {roleFilter ? `(Filter: ${roleFilter})` : ''}
                             </p>
                         </div>
 
                         <div className="flex items-center gap-2">
+                            {(roleFilter || search) && (
+                                <button
+                                    type="button"
+                                    onClick={handleResetAllFilters}
+                                    className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold border border-amber-200 flex items-center gap-1"
+                                >
+                                    <span>Reset Filter</span>
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={handleSelectAllOnPage}
@@ -546,12 +585,25 @@ export default function PortalUsersIndex({
                                 {users.data.length === 0 ? (
                                     <tr>
                                         <td colSpan={8} className="py-12 text-center text-slate-400">
-                                            <div className="max-w-sm mx-auto space-y-2">
-                                                <Database className="w-8 h-8 mx-auto text-slate-300" />
-                                                <p className="font-bold text-slate-600">Tidak ada data akun pada filter ini.</p>
-                                                <p className="text-xs text-slate-400">
-                                                    Klik tombol <em>"Tarik Semua Akun Portal"</em> untuk mengimpor seluruh akun dosen.
-                                                </p>
+                                            <div className="max-w-md mx-auto space-y-3">
+                                                <Database className="w-10 h-10 mx-auto text-slate-300" />
+                                                <div>
+                                                    <p className="font-bold text-slate-700 text-sm">Tidak ada data akun pada filter / pencarian ini.</p>
+                                                    <p className="text-xs text-slate-400 mt-1">
+                                                        Total <strong>{stats.total_users} akun</strong> tersimpan di database lokal ({stats.unassigned_count} belum diberi peran).
+                                                    </p>
+                                                </div>
+                                                <div className="pt-1 flex justify-center gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="primary"
+                                                        size="sm"
+                                                        onClick={handleResetAllFilters}
+                                                        className="bg-[#125c50] hover:bg-[#187566] text-white font-bold"
+                                                    >
+                                                        Tampilkan Semua Pengguna ({stats.total_users})
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
