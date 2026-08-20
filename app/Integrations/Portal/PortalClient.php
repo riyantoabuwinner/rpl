@@ -190,18 +190,22 @@ class PortalClient
                 $body = json_decode($subResponse->getContent(), true) ?? ['raw' => $subResponse->getContent()];
             } else {
                 // External HTTP Request via cURL
-                $response = Http::acceptJson()
-                    ->asForm() // application/x-www-form-urlencoded
+                $http = Http::acceptJson()
                     ->timeout($this->timeout)
                     ->retry($this->retryTimes, 300, function ($exception) use (&$attempt, $log) {
                         $attempt++;
                         $log->update(['retry_count' => $attempt, 'status' => IntegrationStatus::RETRYING]);
                         Log::warning("Portal API Request failed (Attempt #{$attempt}): " . $exception->getMessage());
                         return $exception instanceof ConnectionException || $exception instanceof RequestException;
-                    })
-                    ->send($method, $url, [
+                    });
+
+                if (strtoupper($method) === 'GET') {
+                    $response = $http->get($url, $params);
+                } else {
+                    $response = $http->asForm()->send($method, $url, [
                         'form_params' => $params,
                     ]);
+                }
 
                 $statusCode = $response->status();
                 $body = $response->json();
