@@ -21,7 +21,7 @@ class PortalAuthService
     /**
      * Authenticate with Portal API and synchronize local User
      */
-    public function authenticate(string $username, string $password): array
+    public function authenticate(string $username, string $password, ?UserRole $overrideRole = null): array
     {
         $apiResult = $this->client->login($username, $password);
 
@@ -35,6 +35,11 @@ class PortalAuthService
 
         $portalData = $apiResult['data'] ?? [];
         $userData = $this->extractUserData($portalData, $username);
+
+        // Allow explicit role assignment (e.g. Dosen Portal -> Asesor RPL)
+        if ($overrideRole) {
+            $userData['role'] = $overrideRole;
+        }
 
         // Sync or Create user locally
         $user = $this->syncPortalUser($userData, $password, $portalData);

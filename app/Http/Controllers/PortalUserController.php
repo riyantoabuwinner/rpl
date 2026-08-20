@@ -83,6 +83,11 @@ class PortalUserController extends Controller
                 ];
             });
 
+        $availableRoles = collect(\App\Enums\UserRole::cases())->map(fn ($r) => [
+            'value' => $r->value,
+            'label' => $r->label(),
+        ]);
+
         return Inertia::render('PortalUsers/Index', [
             'users' => $users,
             'filters' => [
@@ -98,29 +103,49 @@ class PortalUserController extends Controller
             ],
             'connection' => $connectionStatus,
             'recentLogs' => $recentLogs,
+            'availableRoles' => $availableRoles,
         ]);
     }
 
     /**
-     * Synchronize a specific user account from Portal API
+     * Synchronize a specific user account from Portal API with selectable role
      */
     public function syncSingle(Request $request): RedirectResponse
     {
         $request->validate([
             'username' => 'required|string|max:100',
             'password' => 'required|string',
+            'target_role' => 'nullable|string|in:super_admin,admin_rpl,asesi,asesor,kaprodi,lpm,admin_siakad',
         ]);
 
         $username = trim($request->input('username'));
         $password = (string) $request->input('password');
+        $targetRoleStr = $request->input('target_role', 'asesor');
+        $overrideRole = \App\Enums\UserRole::tryFrom($targetRoleStr) ?? \App\Enums\UserRole::ASESOR;
 
-        $result = $this->portalAuthService->authenticate($username, $password);
+        $result = $this->portalAuthService->authenticate($username, $password, $overrideRole);
 
         if ($result['success'] && $result['user']) {
-            return back()->with('success', "Akun pengguna [{$username}] berhasil divalidasi dan disinkronkan ke database lokal.");
+            $user = $result['user'];
+            return back()->with('success', "Akun Dosen/Pengguna [{$username}] berhasil divalidasi dan disinkronkan ke database lokal sebagai [{$user->role?->label()}].");
         }
 
         return back()->with('error', 'Gagal sinkronisasi: ' . ($result['message'] ?? 'Kredensial portal tidak valid atau server tidak merespons.'));
+    }
+
+    /**
+     * Update user role directly
+     */
+    public function updateRole(Request $request, User $user): RedirectResponse
+    {
+        $request->validate([
+            'role' => 'required|string|in:super_admin,admin_rpl,asesi,asesor,kaprodi,lpm,admin_siakad',
+        ]);
+
+        $newRole = \App\Enums\UserRole::from($request->role);
+        $user->update(['role' => $newRole]);
+
+        return back()->with('success', "Peran pengguna [{$user->name}] berhasil diubah menjadi [{$newRole->label()}].");
     }
 
     /**

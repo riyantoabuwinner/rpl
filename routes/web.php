@@ -133,6 +133,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/', [\App\Http\Controllers\PortalUserController::class, 'index'])->name('index');
         Route::post('/sync-single', [\App\Http\Controllers\PortalUserController::class, 'syncSingle'])->name('sync-single');
         Route::post('/test-connection', [\App\Http\Controllers\PortalUserController::class, 'testConnection'])->name('test-connection');
+        Route::post('/{user}/update-role', [\App\Http\Controllers\PortalUserController::class, 'updateRole'])->name('update-role');
     });
 });
 
